@@ -1,0 +1,7 @@
+{
+  "title": "Batucada",
+  "lines": [
+    { "id": "surdo", "name": "Surdo", "file": "batucada.mid", "pitches": [47], "sound": "surdo" },
+    { "id": "caixa", "name": "Caixa", "file": "batucada.mid", "pitches": [56], "sound": "caixa" }
+  ]
+}
