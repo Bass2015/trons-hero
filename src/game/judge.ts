@@ -29,7 +29,7 @@ export class Judge {
   readonly results: (Verdict | undefined)[];
   opts: JudgeOptions;
 
-  constructor(notes: Note[], opts: JudgeOptions = { windowMs: 110, perfectMs: 45 }) {
+  constructor(notes: Note[], opts: JudgeOptions = { windowMs: 170, perfectMs: 65 }) {
     this.notes = notes;
     this.results = new Array(notes.length).fill(undefined);
     this.opts = opts;

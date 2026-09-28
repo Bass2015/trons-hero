@@ -46,5 +46,6 @@ export const t = {
   loading: 'Cargando…',
   error: 'Error',
   ms: 'ms',
+  bpm: 'bpm',
   bar: 'Compás',
 };

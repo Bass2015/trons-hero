@@ -68,14 +68,23 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string): HTMLEle
     t.restart,
   );
 
-  const tempoVal = h('span', { class: 'val' }, `${Math.round(s.rate * 100)}%`);
-  const tempo = h('input', { type: 'range', min: '40', max: '120', step: '5', value: String(Math.round(s.rate * 100)) }) as HTMLInputElement;
+  // slider in real bpm; the stored setting stays a rate so it carries over between songs
+  const bpmOf = (rate: number) => Math.round(song.bpm * rate);
+  const tempoVal = h('span', { class: 'val' }, `${bpmOf(s.rate)} ${t.bpm}`);
+  const tempo = h('input', {
+    type: 'range',
+    min: String(bpmOf(0.4)),
+    max: String(bpmOf(1.2)),
+    step: '1',
+    value: String(bpmOf(s.rate)),
+  }) as HTMLInputElement;
   tempo.oninput = () => {
-    const rate = Number(tempo.value) / 100;
+    const bpm = Number(tempo.value);
+    const rate = bpm / song.bpm;
     game.setRate(rate);
     s.rate = rate;
     ctx.save();
-    tempoVal.textContent = `${tempo.value}%`;
+    tempoVal.textContent = `${bpm} ${t.bpm}`;
   };
 
   const metro = h('input', { type: 'checkbox', checked: s.metronome }) as HTMLInputElement;

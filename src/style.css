@@ -54,7 +54,7 @@ button:disabled { opacity: 0.5; }
 .row { display: flex; align-items: center; gap: 8px; }
 .row.wrap { flex-wrap: wrap; }
 .row input[type=range] { flex: 1; }
-.val { min-width: 48px; text-align: right; color: var(--muted); }
+.val { min-width: 64px; text-align: right; color: var(--muted); }
 .ctl-btn { padding: 10px 14px; font-weight: 600; }
 .ctl-btn.primary { background: var(--accent); color: #111; }
 .chk { display: inline-flex; align-items: center; gap: 4px; }

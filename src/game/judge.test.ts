@@ -16,7 +16,7 @@ describe('Judge', () => {
   it('ignores taps outside the window', () => {
     const j = new Judge([n(0), n(4)]);
     expect(j.tap(2, MS)).toBeNull();
-    expect(j.tap(0.23, MS)).toBeNull(); // 115 ms late
+    expect(j.tap(0.36, MS)).toBeNull(); // 180 ms late
     expect(j.results).toEqual([undefined, undefined]);
   });
 
@@ -29,14 +29,14 @@ describe('Judge', () => {
   it('expires notes that scrolled past the window', () => {
     const j = new Judge([n(0), n(1), n(2)]);
     expect(j.expire(1.1, MS)).toEqual([0]);
-    expect(j.expire(1.3, MS)).toEqual([1]);
+    expect(j.expire(1.4, MS)).toEqual([1]);
     expect(j.results).toEqual(['miss', 'miss', undefined]);
   });
 
   it('accepts an early tap for the first note of a loop while near the loop end', () => {
     const j = new Judge([n(4), n(6)]);
     const loop = { startBeat: 4, endBeat: 8 };
-    expect(j.tap(7.9, MS, loop)).toMatchObject({ index: 0, verdict: 'good' }); // 50 ms early, wrapped
+    expect(j.tap(7.8, MS, loop)).toMatchObject({ index: 0, verdict: 'good' }); // 100 ms early, wrapped
   });
 
   it('resets a beat range for the next loop pass', () => {
