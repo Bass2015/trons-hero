@@ -10,6 +10,7 @@ export const es: Dict = {
   settings: 'Ajustes',
   chooseLine: 'Elige tu instrumento',
   mode: 'Modo',
+  instrument: 'Instrumento',
   modes: { escuchar: 'Escuchar', solo: 'Solo mi línea', practicar: 'Practicar' },
   modeHelp: {
     escuchar: 'Suenan todas las líneas.',

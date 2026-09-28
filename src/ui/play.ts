@@ -6,14 +6,14 @@ import { Highway } from '../render/highway';
 import { laneOrder } from '../render/laneOrder';
 import { instrumentFor } from '../song/instruments';
 import type { Song } from '../song/types';
-import type { AppContext } from './app';
+import type { AppContext, PlayResume } from './app';
 import { bolt } from './brand';
 import { h, icon, mmss } from './index';
 
 /** Size of the note pills relative to the lane width; tuned with the ensemble on the mock page. */
 const NOTE_SCALE = 0.5;
 
-export function playScreen(ctx: AppContext, song: Song, lineId: string): HTMLElement {
+export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?: PlayResume): HTMLElement {
   const s = ctx.settings;
   const game = new Game(ctx.engine, song, lineId, { offsetMs: s.offsetMs, metronome: s.metronome, rate: s.rate, mode: s.mode });
   game.setMetronome(s.metronome);
@@ -130,6 +130,27 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string): HTMLEle
 
   const restartBtn = h('button', { class: 'ctl-btn', onclick: () => start() }, t.restart);
 
+  // instrument switch: re-mounts the screen for the new line at the same position
+  const instSel = h('select', { class: 'inst-select', 'aria-label': t.instrument }) as HTMLSelectElement;
+  song.lines.forEach((l, i) => instSel.append(h('option', { value: l.id, selected: l.id === lineId }, instruments[i]!.name)));
+  instSel.style.setProperty('--c', mine.color);
+  instSel.onchange = () => {
+    const beat = Math.max(0, game.transport.currentBeat());
+    const paused = !game.isPlaying;
+    teardown();
+    ctx.go.play(song, instSel.value, { beat, paused });
+  };
+
+  const instRow = h('div', { class: 'row inst-row' }, icon(mine.icon, 'lane-icon'), instSel);
+  instRow.style.color = mine.color;
+
+  const metro = h('input', { type: 'checkbox', checked: s.metronome }) as HTMLInputElement;
+  metro.onchange = () => {
+    s.metronome = metro.checked;
+    ctx.save();
+    game.setMetronome(metro.checked);
+  };
+
   const loopChk = h('input', { type: 'checkbox' }) as HTMLInputElement;
   const fromSel = barSelect(bars, 1);
   const toSel = barSelect(bars, bars);
@@ -208,6 +229,7 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string): HTMLEle
     h(
       'div',
       { class: 'controls' },
+      h('div', { class: 'row' }, instRow, h('span', { class: 'grow' }), h('label', { class: 'chk' }, metro, ` ${t.metronome}`)),
       h('div', { class: 'row' }, modeBar, restartBtn, mixerBtn),
       mixer,
       h(
@@ -226,7 +248,14 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string): HTMLEle
   requestAnimationFrame(() => {
     highway = new Highway(canvas, game, instruments, { visibleSeconds: s.visibleSeconds, hideNotes: s.hideNotes, noteScale: NOTE_SCALE });
     highway.start();
-    start();
+    if (resume) {
+      game.start(resume.beat);
+      if (resume.paused) game.pause();
+      refreshScore();
+      updatePlayBtn();
+    } else {
+      start();
+    }
   });
 
   return screen;

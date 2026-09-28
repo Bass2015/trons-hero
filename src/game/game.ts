@@ -61,10 +61,16 @@ export class Game {
     return this.transport.state === 'playing';
   }
 
-  start() {
+  /** Starts from the count-in, or from `fromBeat` (notes before it are skipped, not missed). */
+  start(fromBeat?: number) {
     this.judge.resetAll();
     this.score.reset();
-    this.transport.play();
+    if (fromBeat === undefined) {
+      this.transport.play();
+    } else {
+      this.transport.play(fromBeat);
+      this.judge.ignoreBefore(fromBeat);
+    }
     this.lastPassBeat = this.transport.currentBeat();
     this.scheduler.start();
   }

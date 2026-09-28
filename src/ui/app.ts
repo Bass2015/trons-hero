@@ -14,6 +14,12 @@ import { setupScreen } from './setup';
 
 export type HomeTab = 'songs' | 'settings';
 
+/** Where to pick playback up when re-entering the play screen (e.g. after switching instrument). */
+export interface PlayResume {
+  beat: number;
+  paused: boolean;
+}
+
 export interface AppContext {
   root: HTMLElement;
   engine: AudioEngine;
@@ -22,7 +28,7 @@ export interface AppContext {
   go: {
     home(tab?: HomeTab): void;
     setup(song: Song): void;
-    play(song: Song, lineId: string): void;
+    play(song: Song, lineId: string, resume?: PlayResume): void;
     results(song: Song, lineId: string, score: Score): void;
   };
 }
@@ -44,11 +50,11 @@ export function startApp(root: HTMLElement) {
     go: {
       home: (tab = 'songs') => showHome(tab),
       setup: (song) => mount(root, setupScreen(ctx, song)),
-      play: (song, lineId) => {
+      play: (song, lineId, resume) => {
         settings.lastSong = song.slug;
         settings.lastLine[song.slug] = lineId;
         saveSettings(settings);
-        mount(root, playScreen(ctx, song, lineId));
+        mount(root, playScreen(ctx, song, lineId, resume));
       },
       results: (song, lineId, score) => mount(root, resultsScreen(ctx, song, lineId, score)),
     },

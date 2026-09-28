@@ -8,6 +8,7 @@ export const ca = {
   settings: 'Configuració',
   chooseLine: 'Tria el teu instrument',
   mode: 'Mode',
+  instrument: 'Instrument',
   modes: { escuchar: 'Escoltar', solo: 'Només la meva línia', practicar: 'Practicar' } as Record<string, string>,
   modeHelp: {
     escuchar: 'Sonen totes les línies.',
