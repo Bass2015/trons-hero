@@ -1,6 +1,8 @@
 import type { Note } from '../song/types';
 
 export type Verdict = 'perfect' | 'good' | 'miss';
+/** 'skip' marks notes that were behind the playhead when judging (re)started: neither hit nor miss. */
+export type NoteResult = Verdict | 'skip';
 
 export interface JudgeOptions {
   /** Half-width of the hit window in milliseconds. */
@@ -26,7 +28,7 @@ export interface LoopBeats {
  */
 export class Judge {
   readonly notes: Note[];
-  readonly results: (Verdict | undefined)[];
+  readonly results: (NoteResult | undefined)[];
   opts: JudgeOptions;
 
   constructor(notes: Note[], opts: JudgeOptions = { windowMs: 170, perfectMs: 65 }) {
@@ -80,5 +82,12 @@ export class Judge {
 
   resetAll() {
     this.results.fill(undefined);
+  }
+
+  /** Marks every unjudged note before `beat` as skipped so it is not counted as a miss. */
+  ignoreBefore(beat: number) {
+    for (let i = 0; i < this.notes.length; i++) {
+      if (!this.results[i] && this.notes[i]!.beat < beat) this.results[i] = 'skip';
+    }
   }
 }

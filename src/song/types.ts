@@ -14,6 +14,8 @@ export interface LineSpec {
   file: string;
   /** MIDI note numbers that belong to this line. Omit to take every note in the file. */
   pitches?: number[];
+  /** Id from the fixed lineup (surdo, contra, goliat, mig, repe, caixa). Defaults to `id`. */
+  instrument?: string;
   sound?: SoundName;
   /** Optional recorded sample, relative to the song folder. Falls back to the synth. */
   sample?: string;

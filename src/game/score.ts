@@ -6,15 +6,25 @@ export class Score {
   miss = 0;
   streak = 0;
   bestStreak = 0;
+  points = 0;
 
-  add(v: Verdict) {
+  /** x1 to x4, one step every 10 consecutive hits. */
+  get multiplier() {
+    return Math.min(4, 1 + Math.floor(this.streak / 10));
+  }
+
+  /** Records a verdict and returns the points it earned. */
+  add(v: Verdict): number {
     this[v]++;
     if (v === 'miss') {
       this.streak = 0;
-    } else {
-      this.streak++;
-      this.bestStreak = Math.max(this.bestStreak, this.streak);
+      return 0;
     }
+    const earned = (v === 'perfect' ? 100 : 50) * this.multiplier;
+    this.streak++;
+    this.bestStreak = Math.max(this.bestStreak, this.streak);
+    this.points += earned;
+    return earned;
   }
 
   get judged() {
@@ -28,6 +38,6 @@ export class Score {
   }
 
   reset() {
-    this.perfect = this.good = this.miss = this.streak = this.bestStreak = 0;
+    this.perfect = this.good = this.miss = this.streak = this.bestStreak = this.points = 0;
   }
 }

@@ -1,4 +1,5 @@
 import type { Mode } from '../game/modes';
+import type { Lang } from '../i18n/index';
 
 export interface Settings {
   offsetMs: number;
@@ -7,6 +8,8 @@ export interface Settings {
   metronome: boolean;
   rate: number;
   mode: Mode;
+  hideNotes: boolean;
+  lang?: Lang;
   lastSong?: string;
   lastLine: Record<string, string>;
 }
@@ -19,6 +22,7 @@ const DEFAULTS: Settings = {
   metronome: true,
   rate: 1,
   mode: 'practicar',
+  hideNotes: false,
   lastLine: {},
 };
 

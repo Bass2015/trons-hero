@@ -46,4 +46,12 @@ describe('Judge', () => {
     j.resetRange(4, 8);
     expect(j.results).toEqual([undefined, undefined, undefined]);
   });
+
+  it('does not miss notes that were behind the playhead when judging restarted', () => {
+    const j = new Judge([n(0), n(1), n(2)]);
+    j.ignoreBefore(1.5);
+    expect(j.expire(3, MS)).toEqual([2]);
+    expect(j.results).toEqual(['skip', 'skip', 'miss']);
+    expect(j.tap(1, MS)).toBeNull(); // skipped notes cannot be hit either
+  });
 });

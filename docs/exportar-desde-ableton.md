@@ -19,9 +19,12 @@ archivos MIDI. La forma más sencilla desde Ableton es **un archivo MIDI por ins
   "title": "Nombre de la canción",
   "bpm": 110,
   "lines": [
-    { "id": "surdo",  "name": "Surdo",     "file": "surdo.mid",  "sound": "surdo" },
-    { "id": "caixa",  "name": "Caixa",     "file": "caixa.mid",  "sound": "caixa" },
-    { "id": "repe",   "name": "Repinique", "file": "repe.mid",   "sound": "repinique" }
+    { "id": "surdo",  "name": "Surdo",  "file": "surdo.mid" },
+    { "id": "contra", "name": "Contra", "file": "contra.mid" },
+    { "id": "goliat", "name": "Goliat", "file": "goliat.mid" },
+    { "id": "mig",    "name": "Mig",    "file": "mig.mid" },
+    { "id": "repe",   "name": "Repe",   "file": "repe.mid" },
+    { "id": "caixa",  "name": "Caixa",  "file": "caixa.mid" }
   ]
 }
 ```
@@ -39,8 +42,9 @@ archivos MIDI. La forma más sencilla desde Ableton es **un archivo MIDI por ins
 | `lines[].id` | sí | Identificador corto, sin espacios. |
 | `lines[].name` | sí | Nombre que se muestra en el carril. |
 | `lines[].file` | sí | Archivo MIDI, relativo a la carpeta. |
+| `lines[].instrument` | no | Uno de `surdo`, `contra`, `goliat`, `mig`, `repe`, `caixa`. Da color, icono y sonido por defecto. Si falta, se usa el `id`. |
 | `lines[].pitches` | no | Notas MIDI que pertenecen a esta línea. Sin él, se usan todas las notas del archivo. Útil cuando varias líneas están en un mismo archivo. |
-| `lines[].sound` | no | Sonido sintetizado: `surdo`, `caixa`, `repinique`, `agogo`, `tamborim`, `chocalho`, `generic`. |
+| `lines[].sound` | no | Sonido sintetizado (por defecto el del instrumento): `surdo`, `caixa`, `repinique`, `agogo`, `tamborim`, `chocalho`, `generic`. |
 | `lines[].sample` | no | Archivo `.wav` grabado, relativo a la carpeta. Si existe, sustituye al sintetizador. |
 
 ## Un solo archivo con varias líneas

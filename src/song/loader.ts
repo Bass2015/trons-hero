@@ -1,12 +1,13 @@
 import type { Line, Song, SongSpec } from './types';
 import { midiToNotes } from './midi';
+import { instrumentFor } from './instruments';
 
 const SONGS_URL = `${import.meta.env.BASE_URL}songs/`;
 
-export async function listSongs(): Promise<{ slug: string; title: string }[]> {
+/** Loads every song listed in index.json (MIDI files are small, so the full parse is cheap). */
+export async function listSongs(): Promise<Song[]> {
   const slugs: string[] = await fetchJson(`${SONGS_URL}index.json`);
-  const specs = await Promise.all(slugs.map(async (slug) => ({ slug, spec: await fetchJson<SongSpec>(`${SONGS_URL}${slug}/song.json`) })));
-  return specs.map(({ slug, spec }) => ({ slug, title: spec.title }));
+  return Promise.all(slugs.map((slug) => loadSong(slug)));
 }
 
 export async function loadSong(slug: string): Promise<Song> {
@@ -28,11 +29,11 @@ export async function buildSong(
   let bpm: number | undefined;
   let beatsPerBar: number | undefined;
   const lines: Line[] = [];
-  for (const l of spec.lines) {
+  for (const [i, l] of spec.lines.entries()) {
     const parsed = midiToNotes(await read(l.file), l.id, l.pitches);
     bpm ??= parsed.bpm;
     beatsPerBar ??= parsed.beatsPerBar;
-    lines.push({ ...l, sound: l.sound ?? 'generic', notes: parsed.notes });
+    lines.push({ ...l, sound: l.sound ?? instrumentFor(l, i).sound, notes: parsed.notes });
   }
   const finalBpm = spec.bpm ?? bpm ?? 120;
   const finalBeatsPerBar = spec.beatsPerBar ?? beatsPerBar ?? 4;

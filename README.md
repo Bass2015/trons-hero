@@ -1,31 +1,44 @@
-# Trons Hero
+# Trons del Baró · app de pràctica
 
-App para practicar las líneas de la batucada al estilo Guitar Hero. La canción baja por
-la pantalla con un carril por instrumento; eliges tu instrumento y tocas al ritmo.
+App per practicar les línies de la batucada a l'estil Guitar Hero. La cançó baixa per
+l'autopista amb un carril per instrument; tries el teu instrument i toques al ritme.
 
-**Abrir:** https://bass2015.github.io/trons-hero/
+**Obrir:** https://bass2015.github.io/trons-hero/
 
-## Instalar en el móvil
+## Instal·lar al mòbil
 
-- **iPhone:** abre el enlace en Safari → botón Compartir → *Añadir a pantalla de inicio*.
-- **Android:** abre el enlace en Chrome → menú ⋮ → *Instalar aplicación* (o acepta el aviso).
+- **iPhone:** obre l'enllaç a Safari → botó Compartir → *Afegir a la pantalla d'inici*.
+- **Android:** obre l'enllaç a Chrome → menú ⋮ → *Instal·lar aplicació* (o accepta l'avís).
 
-Una vez instalada funciona sin conexión. Sube el volumen y quita el modo silencio.
+Un cop instal·lada funciona sense connexió. Apuja el volum i treu el mode silenci.
 
-## Modos
+## Modes
 
-- **Escuchar:** suenan todas las líneas.
-- **Solo mi línea:** solo suena tu instrumento.
-- **Practicar:** suena todo menos tu línea; la tocas tú con los dos botones (o `V` y `N`).
+- **Escoltar:** sonen totes les línies.
+- **Només la meva línia:** només sona el teu instrument.
+- **Practicar:** sona tot menys la teva línia; la toques tu amb els dos botons (o `V` i `N`).
 
-Además: tempo ajustable, bucle por compases, metrónomo, cuenta de entrada, puntuación y
-racha, mezcla por línea y calibración del desfase en Ajustes.
+A més: velocitat ajustable en bpm, bucle per compassos, metrònom, compte d'entrada,
+amagar notes (pràctica de memòria), puntuació amb combo, resultats amb nota, mescla per
+línia, calibratge del desfasament i idioma català / castellà.
 
-## Añadir canciones
+## Instruments
 
-Ver [docs/exportar-desde-ableton.md](docs/exportar-desde-ableton.md).
+Surdo, Contra, Goliat, Mig, Repe i Caixa, cadascun amb el seu color. Al `song.json`, l'`id`
+o el camp `instrument` d'una línia ha de coincidir amb un d'aquests noms per heretar color,
+icona i so.
 
-## Desarrollo
+## Logo
+
+Posa `logo.png` (logo complet) i `bolt.png` (només el llamp) a `public/branding/`. Mentre
+no hi siguin, l'app mostra un logotip de text. La icona de l'app es genera a partir de
+`bolt.png` en fer `npm run build`.
+
+## Afegir cançons
+
+Vegeu [docs/exportar-desde-ableton.md](docs/exportar-desde-ableton.md).
+
+## Desenvolupament
 
 ```bash
 npm install
@@ -34,4 +47,4 @@ npm test
 npm run build
 ```
 
-Cada push a `main` publica la app en GitHub Pages.
+Cada push a `main` publica l'app a GitHub Pages.

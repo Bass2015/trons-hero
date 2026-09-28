@@ -13,6 +13,7 @@ export interface HitEvent {
   hand?: Hand;
   deltaMs?: number;
   noteIndex: number;
+  points: number;
 }
 
 export interface GameOptions {
@@ -93,6 +94,8 @@ export class Game {
     this.scheduler.stop();
     this.transport.setLoop(loop);
     this.judge.resetAll();
+    // notes already behind the playhead must not be counted as misses
+    this.judge.ignoreBefore(this.transport.currentBeat());
     if (wasPlaying) {
       this.lastPassBeat = this.transport.currentBeat();
       this.scheduler.start();
@@ -131,8 +134,8 @@ export class Game {
     const loop = t.loop ? { startBeat: t.loopStartBeat, endBeat: t.loopEndBeat } : undefined;
     const result = this.judge.tap(beat, t.msPerBeat, loop);
     if (result) {
-      this.score.add(result.verdict);
-      this.onHit({ verdict: result.verdict, hand, deltaMs: result.deltaMs, noteIndex: result.index });
+      const points = this.score.add(result.verdict);
+      this.onHit({ verdict: result.verdict, hand, deltaMs: result.deltaMs, noteIndex: result.index, points });
     }
     return result;
   }
@@ -149,7 +152,7 @@ export class Game {
     this.lastPassBeat = beat;
     for (const i of this.judge.expire(beat - this.offsetMs / t.msPerBeat, t.msPerBeat)) {
       this.score.add('miss');
-      this.onHit({ verdict: 'miss', noteIndex: i });
+      this.onHit({ verdict: 'miss', noteIndex: i, points: 0 });
     }
     if (t.isFinished()) {
       this.stop();
