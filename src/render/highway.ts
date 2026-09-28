@@ -3,6 +3,7 @@ import type { Verdict } from '../game/judge';
 import { t } from '../i18n/index';
 import type { Instrument } from '../song/instruments';
 import { Background } from './background';
+import { laneOrder } from './laneOrder';
 
 interface Flash {
   lane: number;
@@ -16,6 +17,8 @@ export interface HighwayOptions {
   visibleSeconds: number;
   /** Memory mode: do not draw notes. */
   hideNotes: boolean;
+  /** Multiplier on the note pill size (1 = 70% of the lane width for the player's lane, 62% for others). */
+  noteScale?: number;
 }
 
 const FONT = '"Barlow Condensed", system-ui, sans-serif';
@@ -91,16 +94,17 @@ export class Highway {
     return this.h * 0.84;
   }
 
-  /** Lane spans at the strike line (full width). */
+  /** Lane spans at the strike line (full width), indexed by line; the player's line sits in the middle. */
   private lanesAtStrike() {
     const n = this.instruments.length;
-    const weights = this.instruments.map((_, i) => (i === this.myLane ? 1.6 : 1));
-    const total = weights.reduce((a, b) => a + b, 0);
+    const myLane = this.myLane;
+    const order = laneOrder(n, myLane);
+    const total = n - 1 + (myLane >= 0 ? 1.6 : 1);
+    const out: { x0: number; x1: number; cx: number; w: number }[] = new Array(n);
     let x = 0;
-    const out: { x0: number; x1: number; cx: number; w: number }[] = [];
-    for (let i = 0; i < n; i++) {
-      const w = (this.w * (weights[i] ?? 1)) / total;
-      out.push({ x0: x, x1: x + w, cx: x + w / 2, w });
+    for (const li of order) {
+      const w = (this.w * (li === myLane ? 1.6 : 1)) / total;
+      out[li] = { x0: x, x1: x + w, cx: x + w / 2, w };
       x += w;
     }
     return out;
@@ -258,7 +262,7 @@ export class Highway {
         const inst = this.instruments[li]!;
         const mine = li === myLane;
         const state = game.lineStates[line.id];
-        const baseW = l.w * (mine ? 0.7 : 0.62);
+        const baseW = l.w * (mine ? 0.7 : 0.62) * (this.opts.noteScale ?? 1);
         line.notes.forEach((n, ni) => {
           for (const displayBeat of this.wrapCandidates(n.beat, nearBeat, farBeat)) {
             const d = (displayBeat - beatNow) * spb;

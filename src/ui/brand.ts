@@ -2,7 +2,7 @@ import { h } from './dom';
 
 const BASE = import.meta.env.BASE_URL;
 
-/** Inline lightning bolt in the brand colours, used when bolt.png is missing and for thumbnails. */
+/** Inline lightning bolt in the brand colours, used when no bolt file exists and for thumbnails. */
 export const BOLT_SVG = `<svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg">
   <path d="M35 4 L11 42 H29 L23 68 L55 26 H37 L46 4 Z" fill="#ff2fb3" transform="translate(3,3)"/>
   <path d="M35 4 L11 42 H29 L23 68 L55 26 H37 L46 4 Z" fill="#22d3ee" transform="translate(-3,-2)"/>
@@ -15,22 +15,30 @@ function wordmark(): HTMLElement {
   return wm;
 }
 
-/** Full logo: uses public/branding/logo.png, falls back to a CSS wordmark. */
+/** Tries each candidate file in order; calls `fallback` when none loads. */
+function tryImages(wrap: HTMLElement, files: string[], alt: string, cls: string, fallback: () => void) {
+  const next = (i: number) => {
+    const file = files[i];
+    if (!file) return fallback();
+    const img = h('img', { src: `${BASE}branding/${file}`, alt, class: cls }) as HTMLImageElement;
+    img.onerror = () => next(i + 1);
+    wrap.replaceChildren(img);
+  };
+  next(0);
+}
+
+/** Full logo: public/branding/logo.svg or logo.png, falls back to a CSS wordmark. */
 export function logo(cls = ''): HTMLElement {
   const wrap = h('div', { class: `logo-wrap ${cls}` });
-  const img = h('img', { src: `${BASE}branding/logo.png`, alt: 'Trons del Baró', class: 'logo-img' }) as HTMLImageElement;
-  img.onerror = () => wrap.replaceChildren(wordmark());
-  wrap.append(img);
+  tryImages(wrap, ['logo.svg', 'logo.png'], 'Trons del Baró', 'logo-img', () => wrap.replaceChildren(wordmark()));
   return wrap;
 }
 
-/** Bolt only: uses public/branding/bolt.png, falls back to the inline SVG. */
+/** Bolt only: public/branding/bolt.svg or bolt.png, falls back to the inline SVG. */
 export function bolt(cls = ''): HTMLElement {
   const wrap = h('span', { class: `bolt ${cls}` });
-  const img = h('img', { src: `${BASE}branding/bolt.png`, alt: '' }) as HTMLImageElement;
-  img.onerror = () => {
+  tryImages(wrap, ['bolt.svg', 'bolt.png'], '', '', () => {
     wrap.innerHTML = BOLT_SVG;
-  };
-  wrap.append(img);
+  });
   return wrap;
 }

@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png'],
+      includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png', 'branding/*'],
       manifest: {
         name: 'Trons del Baró',
         short_name: 'Trons',

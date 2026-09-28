@@ -3,11 +3,15 @@ import { MODES, type Mode } from '../game/modes';
 import { t } from '../i18n/index';
 import { bindTaps } from '../input/taps';
 import { Highway } from '../render/highway';
+import { laneOrder } from '../render/laneOrder';
 import { instrumentFor } from '../song/instruments';
 import type { Song } from '../song/types';
 import type { AppContext } from './app';
 import { bolt } from './brand';
 import { h, icon, mmss } from './index';
+
+/** Size of the note pills relative to the lane width; tuned with the ensemble on the mock page. */
+const NOTE_SCALE = 0.5;
 
 export function playScreen(ctx: AppContext, song: Song, lineId: string): HTMLElement {
   const s = ctx.settings;
@@ -72,7 +76,8 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string): HTMLEle
   const labels = h(
     'div',
     { class: 'lane-labels' },
-    instruments.map((inst, i) => {
+    laneOrder(instruments.length, myLane).map((i) => {
+      const inst = instruments[i]!;
       const el = h('div', { class: `lane-label ${i === myLane ? 'mine' : ''}` }, icon(inst.icon, 'lane-icon'), h('span', {}, inst.name));
       el.style.color = inst.color;
       el.style.flex = String(i === myLane ? 1.6 : 1);
@@ -219,7 +224,7 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string): HTMLEle
 
   // start once the canvas is laid out
   requestAnimationFrame(() => {
-    highway = new Highway(canvas, game, instruments, { visibleSeconds: s.visibleSeconds, hideNotes: s.hideNotes });
+    highway = new Highway(canvas, game, instruments, { visibleSeconds: s.visibleSeconds, hideNotes: s.hideNotes, noteScale: NOTE_SCALE });
     highway.start();
     start();
   });
