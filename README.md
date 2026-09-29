@@ -36,7 +36,12 @@ no hi siguin, l'app mostra un logotip de text. La icona de l'app es genera a par
 
 ## Afegir cançons
 
-Vegeu [docs/exportar-desde-ableton.md](docs/exportar-desde-ableton.md).
+Copia el projecte d'Ableton (`.als`) a `public/songs/<nom>/` i executa
+`npm run import:als public/songs/<nom>`. Genera els `.mid` i el `song.json`. Detalls i
+exportació manual a [docs/exportar-desde-ableton.md](docs/exportar-desde-ableton.md).
+
+Les velocities del projecte es veuen a l'app: els accents surten més grans i brillants, les
+notes fantasma més petites i tènues.
 
 ## Desenvolupament
 

@@ -1,21 +1,22 @@
 import { MODES, type Mode } from '../game/modes';
 import { t } from '../i18n/index';
 import { instrumentFor } from '../song/instruments';
-import type { Song } from '../song/types';
+import { laneLines, type Song } from '../song/types';
 import type { AppContext } from './app';
 import { h, header, icon } from './index';
 
 /** Pre-play screen: instrument cards, mode, speed, toggles, start. */
 export function setupScreen(ctx: AppContext, song: Song): HTMLElement {
   const s = ctx.settings;
-  let lineId = s.lastLine[song.slug] ?? song.lines[0]!.id;
-  if (!song.lines.some((l) => l.id === lineId)) lineId = song.lines[0]!.id;
+  const lanes = laneLines(song);
+  let lineId = s.lastLine[song.slug] ?? lanes[0]!.id;
+  if (!lanes.some((l) => l.id === lineId)) lineId = lanes[0]!.id;
 
   // --- instrument cards
   const cards = h('div', { class: 'cards' });
   const renderCards = () => {
     cards.replaceChildren(
-      ...song.lines.map((l, i) => {
+      ...lanes.map((l, i) => {
         const inst = instrumentFor(l, i);
         const card = h(
           'button',

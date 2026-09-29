@@ -1,7 +1,7 @@
 import type { Score } from '../game/score';
 import { t } from '../i18n/index';
 import { instrumentFor } from '../song/instruments';
-import type { Song } from '../song/types';
+import { laneLines, type Song } from '../song/types';
 import type { AppContext } from './app';
 import { h, header, icon } from './index';
 
@@ -14,8 +14,9 @@ export function gradeFor(accuracy: number): string {
 }
 
 export function resultsScreen(ctx: AppContext, song: Song, lineId: string, score: Score): HTMLElement {
-  const idx = Math.max(0, song.lines.findIndex((l) => l.id === lineId));
-  const inst = instrumentFor(song.lines[idx]!, idx);
+  const lanes = laneLines(song);
+  const idx = Math.max(0, lanes.findIndex((l) => l.id === lineId));
+  const inst = instrumentFor(lanes[idx]!, idx);
   const acc = score.accuracy;
   const grade = gradeFor(acc);
 

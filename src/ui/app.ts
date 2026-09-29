@@ -3,7 +3,7 @@ import type { Score } from '../game/score';
 import { detectLang, setLang, t } from '../i18n/index';
 import { instrumentFor } from '../song/instruments';
 import { listSongs, loadSong } from '../song/loader';
-import type { Song } from '../song/types';
+import { laneLines, type Song } from '../song/types';
 import { loadSettings, saveSettings, type Settings } from '../state/settings';
 import { BOLT_SVG, logo } from './brand';
 import { h, header, icon, mmss, mount } from './index';
@@ -115,7 +115,7 @@ export function startApp(root: HTMLElement) {
       'div',
       { class: 'list' },
       songs.map((song) => {
-        const first = instrumentFor(song.lines[0] ?? { id: 'x', name: '' }, 0);
+        const first = instrumentFor(laneLines(song)[0] ?? { id: 'x', name: '' }, 0);
         const thumb = icon(BOLT_SVG, 'thumb');
         thumb.style.background = `linear-gradient(135deg, ${first.color}, #0b0b10 90%)`;
         return h(
@@ -129,7 +129,7 @@ export function startApp(root: HTMLElement) {
             },
           },
           thumb,
-          h('div', { class: 'song-meta' }, h('div', { class: 'song-title' }, song.title), h('div', { class: 'hint small' }, `${t.groupName} · ${song.lines.length} ${t.lines}`)),
+          h('div', { class: 'song-meta' }, h('div', { class: 'song-title' }, song.title), h('div', { class: 'hint small' }, `${t.groupName} · ${laneLines(song).length} ${t.lines}`)),
           h('div', { class: 'song-dur' }, mmss((song.lengthBeats * 60) / song.bpm)),
         );
       }),

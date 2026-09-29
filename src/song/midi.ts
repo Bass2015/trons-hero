@@ -24,6 +24,7 @@ export function midiToNotes(bytes: ArrayBuffer | Uint8Array, lineId: string, pit
         beat: n.ticks / ppq,
         durationBeats: n.durationTicks / ppq,
         velocity: n.velocity,
+        pitch: n.midi,
       });
     }
   }

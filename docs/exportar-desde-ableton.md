@@ -1,5 +1,47 @@
 # Exportar una canción desde Ableton
 
+Hay dos caminos: **importar el proyecto `.als` directamente** (un comando, recomendado) o
+exportar cada instrumento como clip MIDI a mano.
+
+## Camino rápido: importar el `.als`
+
+1. Guarda el proyecto en Ableton.
+2. Crea la carpeta de la canción y copia dentro el `.als`:
+   `public/songs/pachuco/pachuco.als`.
+3. Ejecuta `npm run import:als public/songs/pachuco`.
+4. Añade `"pachuco"` a `public/songs/index.json`, commit y push.
+
+El importador lee todos los clips MIDI del arrangement, desenrolla los loops, y escribe un
+`.mid` por línea más el `song.json`. Se mantienen los números de compás de Ableton, el tempo y
+el compás del set. Las notas desactivadas se ignoran.
+
+Mapeo por defecto según el nombre de la pista (mayúsculas y espacios no importan):
+
+| Pista en Ableton | Línea | Rol |
+|---|---|---|
+| SURDO, CONTRA, GOLIAT, MIG, CAIXA | mismo id | carril |
+| REPLANA, REPE, REPINIQUE | `repe` | carril |
+| ROCAR … (varias pistas se fusionan; las que contienen FLUIX suenan al 60 %) | `rocar` | `hidden`: suena, sin carril |
+| CLAQUETA, CLICK, METRÓNOMO | `claqueta` | `click`: suena como metrónomo de la canción (la nota más alta es el acento) |
+| cualquier otra | se ignora con aviso | |
+
+Para cambiar el título o el mapeo, crea `import.json` en la carpeta:
+
+```json
+{
+  "title": "Pachuco",
+  "tracks": {
+    "HIHAT": null,
+    "13 Ferro / Rim": { "id": "ferro", "name": "Ferro", "role": "hidden" },
+    "20-TronRakos": "caixa"
+  }
+}
+```
+
+Requiere Node 23.6 o superior (el script importa código TypeScript directamente).
+
+## Camino manual: un clip MIDI por instrumento
+
 Cada canción es una carpeta dentro de `public/songs/` con un `song.json` y uno o más
 archivos MIDI. La forma más sencilla desde Ableton es **un archivo MIDI por instrumento**.
 
@@ -46,6 +88,7 @@ archivos MIDI. La forma más sencilla desde Ableton es **un archivo MIDI por ins
 | `lines[].pitches` | no | Notas MIDI que pertenecen a esta línea. Sin él, se usan todas las notas del archivo. Útil cuando varias líneas están en un mismo archivo. |
 | `lines[].sound` | no | Sonido sintetizado (por defecto el del instrumento): `surdo`, `caixa`, `repinique`, `agogo`, `tamborim`, `chocalho`, `generic`. |
 | `lines[].sample` | no | Archivo `.wav` grabado, relativo a la carpeta. Si existe, sustituye al sintetizador. |
+| `lines[].role` | no | `lane` (por defecto), `hidden` (suena pero no se ve ni se elige) o `click` (claqueta de la canción; sustituye al metrónomo continuo cuando el metrónomo está activo). |
 
 ## Un solo archivo con varias líneas
 

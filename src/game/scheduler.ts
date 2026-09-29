@@ -1,5 +1,5 @@
 import type { AudioEngine } from '../audio/engine';
-import type { Song } from '../song/types';
+import { clickLine, type Song } from '../song/types';
 import type { LineState } from './modes';
 import type { Transport } from './transport';
 
@@ -83,16 +83,25 @@ export class Scheduler {
   private scheduleSlice(fromBeat: number, toBeat: number, fromTime: number, spb: number) {
     if (toBeat <= fromBeat) return;
     const timeOf = (beat: number) => fromTime + (beat - fromBeat) * spb;
-    // metronome and count-in clicks on every beat
+    // count-in clicks before beat 0; then either the song's own click track or a continuous metronome
+    const click = clickLine(this.song);
     if (this.metronome || fromBeat < 0) {
       for (let b = Math.ceil(fromBeat - 1e-9); b < toBeat; b++) {
         if (b >= this.song.lengthBeats) break;
-        if (!this.metronome && b >= 0) break;
+        if (b >= 0 && (!this.metronome || click)) break;
         const accent = ((b % this.song.beatsPerBar) + this.song.beatsPerBar) % this.song.beatsPerBar === 0;
         this.engine.playClick(timeOf(b), accent);
       }
     }
+    if (click && this.metronome) {
+      for (const n of click.notes) {
+        if (n.beat < fromBeat) continue;
+        if (n.beat >= toBeat) break;
+        this.engine.playClick(timeOf(n.beat), n.velocity >= 0.9);
+      }
+    }
     for (const line of this.song.lines) {
+      if (line.role === 'click') continue;
       if (this.lineState(line.id) !== 'auto') continue;
       for (const n of line.notes) {
         if (n.beat < fromBeat) continue;

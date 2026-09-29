@@ -36,7 +36,12 @@ export const INSTRUMENTS: Instrument[] = [
   { id: 'mig', name: 'Mig', color: '#ffd60a', sound: 'repinique', icon: drum('tom') },
   { id: 'repe', name: 'Repe', color: '#4dff88', sound: 'repinique', icon: drum('tom') },
   { id: 'caixa', name: 'Caixa', color: '#a855f7', sound: 'caixa', icon: drum('snare') },
+  // not part of the practised lineup, but songs may carry it as a hidden line
+  { id: 'rocar', name: 'Rocar', color: '#d9d9e3', sound: 'chocalho', icon: drum('tom') },
 ];
+
+/** The six lines members practise; extra instruments (rocar) are excluded from positional fallbacks. */
+export const LINEUP = INSTRUMENTS.slice(0, 6);
 
 const byId = new Map(INSTRUMENTS.map((i) => [i.id, i]));
 
@@ -44,6 +49,6 @@ const byId = new Map(INSTRUMENTS.map((i) => [i.id, i]));
 export function instrumentFor(line: Pick<LineSpec, 'id' | 'name' | 'instrument' | 'sound'>, index: number): Instrument {
   const known = byId.get((line.instrument ?? line.id).toLowerCase());
   if (known) return { ...known, name: line.name || known.name, sound: line.sound ?? known.sound };
-  const fallback = INSTRUMENTS[index % INSTRUMENTS.length]!;
+  const fallback = LINEUP[index % LINEUP.length]!;
   return { ...fallback, id: line.id, name: line.name, sound: line.sound ?? 'generic' };
 }

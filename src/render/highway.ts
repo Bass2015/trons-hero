@@ -2,6 +2,7 @@ import type { Game } from '../game/game';
 import type { Verdict } from '../game/judge';
 import { t } from '../i18n/index';
 import type { Instrument } from '../song/instruments';
+import { laneLines, type Line } from '../song/types';
 import { Background } from './background';
 import { laneOrder } from './laneOrder';
 
@@ -37,6 +38,8 @@ export class Highway {
   private dpr = 1;
   private bg = new Background();
   private sprites = new Map<string, HTMLCanvasElement>();
+  /** Lines that have a lane, in song order; `instruments` is parallel to this. */
+  private lines: Line[];
   opts: HighwayOptions;
 
   constructor(
@@ -46,6 +49,7 @@ export class Highway {
     opts: HighwayOptions,
   ) {
     this.opts = opts;
+    this.lines = laneLines(game.song);
     this.ctx = canvas.getContext('2d')!;
     this.onResize = this.onResize.bind(this);
     this.resize();
@@ -111,7 +115,7 @@ export class Highway {
   }
 
   private get myLane() {
-    return this.game.song.lines.findIndex((l) => l.id === this.game.myLineId);
+    return this.lines.findIndex((l) => l.id === this.game.myLineId);
   }
 
   /** Perspective scale for a depth in seconds ahead of the strike line. */
@@ -257,7 +261,7 @@ export class Highway {
 
     // notes
     if (!this.opts.hideNotes) {
-      game.song.lines.forEach((line, li) => {
+      this.lines.forEach((line, li) => {
         const l = lanes[li]!;
         const inst = this.instruments[li]!;
         const mine = li === myLane;
@@ -284,7 +288,10 @@ export class Highway {
             // fade in at the far end
             alpha *= Math.min(1, Math.max(0, (this.opts.visibleSeconds * 1.35 - d) / (this.opts.visibleSeconds * 0.35)));
             if (alpha <= 0.01) continue;
-            const nw = baseW * p.s;
+            // dynamics: ghost notes small and faint, accents big and bright
+            const dyn = n.velocity < 0.35 ? 0.72 : n.velocity > 0.85 ? 1.25 : 1;
+            if (n.velocity < 0.35) alpha *= 0.65;
+            const nw = baseW * p.s * dyn;
             const nh = nw * 0.42;
             const sprite = this.sprite(inst.color, variant);
             ctx.globalAlpha = alpha;

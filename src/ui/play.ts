@@ -5,7 +5,7 @@ import { bindTaps } from '../input/taps';
 import { Highway } from '../render/highway';
 import { laneOrder } from '../render/laneOrder';
 import { instrumentFor } from '../song/instruments';
-import type { Song } from '../song/types';
+import { laneLines, soundingLines, type Song } from '../song/types';
 import type { AppContext, PlayResume } from './app';
 import { bolt } from './brand';
 import { h, icon, mmss } from './index';
@@ -18,8 +18,9 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   const game = new Game(ctx.engine, song, lineId, { offsetMs: s.offsetMs, metronome: s.metronome, rate: s.rate, mode: s.mode });
   game.setMetronome(s.metronome);
   const bars = song.lengthBeats / song.beatsPerBar;
-  const instruments = song.lines.map((l, i) => instrumentFor(l, i));
-  const myLane = song.lines.findIndex((l) => l.id === lineId);
+  const lanes = laneLines(song);
+  const instruments = lanes.map((l, i) => instrumentFor(l, i));
+  const myLane = lanes.findIndex((l) => l.id === lineId);
   const mine = instruments[myLane]!;
 
   // --- header: pause, bolt, title + time + progress, combo card
@@ -132,7 +133,7 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
 
   // instrument switch: re-mounts the screen for the new line at the same position
   const instSel = h('select', { class: 'inst-select', 'aria-label': t.instrument }) as HTMLSelectElement;
-  song.lines.forEach((l, i) => instSel.append(h('option', { value: l.id, selected: l.id === lineId }, instruments[i]!.name)));
+  lanes.forEach((l, i) => instSel.append(h('option', { value: l.id, selected: l.id === lineId }, instruments[i]!.name)));
   instSel.style.setProperty('--c', mine.color);
   instSel.onchange = () => {
     const beat = Math.max(0, game.transport.currentBeat());
@@ -171,16 +172,17 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   const mixer = h('div', { class: 'mixer hidden' });
   const refreshMixer = () => {
     mixer.replaceChildren(
-      ...song.lines.map((l, i) => {
+      ...soundingLines(song).map((l) => {
         const st = game.lineStates[l.id];
+        const inst = instrumentFor(l, Math.max(0, lanes.indexOf(l)));
         const b = h(
           'button',
           { class: `mix-btn ${st === 'auto' ? 'on' : ''}`, onclick: () => { game.toggleLine(l.id); refreshMixer(); } },
-          icon(instruments[i]!.icon, 'lane-icon'),
-          l.name,
+          icon(inst.icon, 'lane-icon'),
+          inst.name,
           h('span', { class: 'state' }, st === 'auto' ? '🔊' : st === 'me' ? '🥁' : '🔇'),
         );
-        b.style.setProperty('--c', instruments[i]!.color);
+        b.style.setProperty('--c', inst.color);
         return b;
       }),
     );

@@ -1,0 +1,49 @@
+{
+  "title": "Pachuco",
+  "bpm": 113,
+  "beatsPerBar": 4,
+  "lines": [
+    {
+      "id": "surdo",
+      "name": "Surdo",
+      "file": "surdo.mid"
+    },
+    {
+      "id": "contra",
+      "name": "Contra",
+      "file": "contra.mid"
+    },
+    {
+      "id": "goliat",
+      "name": "Goliat",
+      "file": "goliat.mid"
+    },
+    {
+      "id": "mig",
+      "name": "Mig",
+      "file": "mig.mid"
+    },
+    {
+      "id": "repe",
+      "name": "Repe",
+      "file": "repe.mid"
+    },
+    {
+      "id": "caixa",
+      "name": "Caixa",
+      "file": "caixa.mid"
+    },
+    {
+      "id": "rocar",
+      "name": "Rocar",
+      "file": "rocar.mid",
+      "role": "hidden"
+    },
+    {
+      "id": "claqueta",
+      "name": "Claqueta",
+      "file": "claqueta.mid",
+      "role": "click"
+    }
+  ]
+}

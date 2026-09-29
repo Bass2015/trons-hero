@@ -7,6 +7,13 @@ export type SoundName =
   | 'chocalho'
   | 'generic';
 
+/**
+ * lane   = visible, selectable, playable (default).
+ * hidden = sounds with the song but has no lane (e.g. shakers that nobody practises).
+ * click  = the song's own click track: plays through the metronome channel when the metronome is on.
+ */
+export type LineRole = 'lane' | 'hidden' | 'click';
+
 /** A line as declared in song.json. */
 export interface LineSpec {
   id: string;
@@ -19,6 +26,7 @@ export interface LineSpec {
   sound?: SoundName;
   /** Optional recorded sample, relative to the song folder. Falls back to the synth. */
   sample?: string;
+  role?: LineRole;
 }
 
 export interface SongSpec {
@@ -37,6 +45,8 @@ export interface Note {
   durationBeats: number;
   /** 0..1 */
   velocity: number;
+  /** MIDI note number, kept for stroke types and click accents. */
+  pitch?: number;
 }
 
 export interface Line extends LineSpec {
@@ -54,4 +64,18 @@ export interface Song {
   lines: Line[];
   /** Base URL of the song folder, used to fetch samples. */
   baseUrl: string;
+}
+
+/** Lines that get a lane on the highway. */
+export function laneLines(song: Pick<Song, 'lines'>): Line[] {
+  return song.lines.filter((l) => (l.role ?? 'lane') === 'lane');
+}
+
+/** Lines that produce sound with the song (lanes and hidden lines, not the click). */
+export function soundingLines(song: Pick<Song, 'lines'>): Line[] {
+  return song.lines.filter((l) => (l.role ?? 'lane') !== 'click');
+}
+
+export function clickLine(song: Pick<Song, 'lines'>): Line | undefined {
+  return song.lines.find((l) => l.role === 'click');
 }
