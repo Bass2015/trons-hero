@@ -3,9 +3,12 @@
  *   node scripts/import-als.mjs public/songs/<slug>
  * Reads the first .als in the folder, flattens every MIDI track's arrangement
  * clips, and writes one <line>.mid per line plus song.json.
- * Optional import.json in the folder overrides title and track mapping:
- *   { "title": "…", "tracks": { "<Ableton track name>": "surdo" | null |
+ * Optional import.json in the folder overrides title, range and track mapping:
+ *   { "title": "…", "firstBar": 14, "endBar": 148, "cover": "cover.jpg",
+ *     "tracks": { "<Ableton track name>": "surdo" | null |
  *     { "id": "rocar", "name": "Rocar", "role": "hidden", "velocityScale": 0.6 } } }
+ * Leading silence is trimmed to the first bar with a note and trailing silence after
+ * the last non-click note is dropped; bar labels in the app keep the project's numbers.
  * Requires Node 23.6+ (imports TypeScript sources directly).
  */
 import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -74,6 +77,7 @@ function defaultMapping(name) {
   if (/^(repe|replana|repinique)\b/.test(n)) return { id: 'repe' };
   if (/^rocar/.test(n)) return { id: 'rocar', role: 'hidden', velocityScale: /fluix|suau|soft|piano/.test(n) ? 0.6 : 1 };
   if (/^(claqueta|click|metr[oò]nom)/.test(n)) return { id: 'claqueta', name: 'Claqueta', role: 'click' };
+  if (/^ferro/.test(n)) return { id: 'ferro', name: 'Ferro', role: 'hidden' };
   return null;
 }
 function mappingFor(name) {
@@ -106,10 +110,26 @@ for (const line of lines.values()) {
   }
 }
 
+// --- range: trim leading silence (keeping bar numbers) and trailing silence -----------
+const all = [...lines.values()];
+const firstBeat = Math.min(...all.flatMap((l) => l.notes.map((n) => n.beat)));
+const lastPlayedBeat = Math.max(...all.filter((l) => l.role !== 'click').flatMap((l) => l.notes.map((n) => n.beat)));
+const firstBar = overrides.firstBar ?? Math.floor(firstBeat / beatsPerBar) + 1;
+const endBar = overrides.endBar ?? Math.floor(lastPlayedBeat / beatsPerBar) + 1; // inclusive, project numbering
+const offset = (firstBar - 1) * beatsPerBar;
+const endBeat = endBar * beatsPerBar;
+for (const l of all) {
+  const before = l.notes.length;
+  l.notes = l.notes.filter((n) => n.beat >= offset - 1e-9 && n.beat < endBeat - 1e-9).map((n) => ({ ...n, beat: n.beat - offset }));
+  if (l.notes.length !== before) console.log(`  trimmed ${before - l.notes.length} notes of ${l.id} outside bars ${firstBar}-${endBar}`);
+}
+
 // --- write -----------------------------------------------------------------------
-const order = [...INSTRUMENTS.map((i) => i.id), 'claqueta'];
-const sorted = [...lines.values()].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-const spec = { title: overrides.title ?? titleCase(basename(alsFile, '.als')), bpm, beatsPerBar, lines: [] };
+const order = [...INSTRUMENTS.map((i) => i.id), 'ferro', 'claqueta'];
+const sorted = all.filter((l) => l.notes.length).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+const spec = { title: overrides.title ?? titleCase(basename(alsFile, '.als')), bpm, beatsPerBar, firstBar, lines: [] };
+const cover = overrides.cover ?? (existsSync(join(folder, 'cover.jpg')) ? 'cover.jpg' : undefined);
+if (cover) spec.cover = cover;
 for (const line of sorted) {
   const midi = new Midi();
   midi.header.setTempo(bpm);
@@ -125,8 +145,8 @@ for (const line of sorted) {
   spec.lines.push(entry);
 }
 writeFileSync(join(folder, 'song.json'), JSON.stringify(spec, null, 2) + '\n');
-const lastBeat = Math.max(...sorted.flatMap((l) => l.notes.map((n) => n.beat)));
-console.log(`\n${spec.title}: ${bpm} bpm, ${sig.numerator}/${sig.denominator}, ${sorted.length} lines, last note at bar ${Math.floor(lastBeat / beatsPerBar) + 1} (${Math.round((lastBeat * 60) / bpm)} s)`);
+const lengthBeats = endBeat - offset;
+console.log(`\n${spec.title}: ${bpm} bpm, ${sig.numerator}/${sig.denominator}, ${sorted.length} lines, project bars ${firstBar}-${endBar} (${Math.round((lengthBeats * 60) / bpm)} s)`);
 
 function titleCase(s) {
   return s.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());

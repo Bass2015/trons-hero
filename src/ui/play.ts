@@ -153,8 +153,8 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   };
 
   const loopChk = h('input', { type: 'checkbox' }) as HTMLInputElement;
-  const fromSel = barSelect(bars, 1);
-  const toSel = barSelect(bars, bars);
+  const fromSel = barSelect(bars, 1, song.firstBar);
+  const toSel = barSelect(bars, bars, song.firstBar);
   const applyLoop = () => {
     let from = Number(fromSel.value);
     let to = Number(toSel.value);
@@ -263,8 +263,9 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   return screen;
 }
 
-function barSelect(bars: number, value: number): HTMLSelectElement {
+/** Values are app bars (1..bars); labels show the project's bar numbers. */
+function barSelect(bars: number, value: number, firstBar: number): HTMLSelectElement {
   const sel = h('select', {}) as HTMLSelectElement;
-  for (let i = 1; i <= bars; i++) sel.append(h('option', { value: String(i), selected: i === value }, String(i)));
+  for (let i = 1; i <= bars; i++) sel.append(h('option', { value: String(i), selected: i === value }, String(i + firstBar - 1)));
   return sel;
 }

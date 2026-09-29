@@ -23,13 +23,21 @@ Mapeo por defecto según el nombre de la pista (mayúsculas y espacios no import
 | REPLANA, REPE, REPINIQUE | `repe` | carril |
 | ROCAR … (varias pistas se fusionan; las que contienen FLUIX suenan al 60 %) | `rocar` | `hidden`: suena, sin carril |
 | CLAQUETA, CLICK, METRÓNOMO | `claqueta` | `click`: suena como metrónomo de la canción (la nota más alta es el acento) |
+| FERRO | `ferro` | `hidden` |
+| REPE CANTO | se fusiona en `repe` | carril |
 | cualquier otra | se ignora con aviso | |
 
-Para cambiar el título o el mapeo, crea `import.json` en la carpeta:
+El importador recorta el silencio inicial (empieza en el primer compás con notas) y el
+final (tras la última nota que no sea claqueta), pero **mantiene los números de compás de
+Ableton** en la app gracias al campo `firstBar`. Si hay un `cover.jpg` en la carpeta, se usa
+como portada.
+
+Para cambiar el título, el rango o el mapeo, crea `import.json` en la carpeta:
 
 ```json
 {
   "title": "Pachuco",
+  "endBar": 41,
   "tracks": {
     "HIHAT": null,
     "13 Ferro / Rim": { "id": "ferro", "name": "Ferro", "role": "hidden" },
@@ -81,6 +89,8 @@ archivos MIDI. La forma más sencilla desde Ableton es **un archivo MIDI por ins
 | `title` | sí | Nombre que se muestra. |
 | `bpm` | no | Tempo. Si falta, se lee del MIDI (Ableton lo incluye). |
 | `beatsPerBar` | no | Pulsos por compás. Si falta, se lee del MIDI o se usa 4. |
+| `firstBar` | no | Número de compás (de Ableton) del primer compás de la app. Por defecto 1. |
+| `cover` | no | Imagen de portada, relativa a la carpeta. |
 | `lines[].id` | sí | Identificador corto, sin espacios. |
 | `lines[].name` | sí | Nombre que se muestra en el carril. |
 | `lines[].file` | sí | Archivo MIDI, relativo a la carpeta. |

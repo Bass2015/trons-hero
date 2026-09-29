@@ -33,6 +33,7 @@ const song: Song = {
   bpm: 120,
   beatsPerBar: BPB,
   lengthBeats: BARS * BPB,
+  firstBar: 1,
   baseUrl: '',
   lines: [
     pattern('surdo', [0, 2]),

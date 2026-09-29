@@ -116,8 +116,8 @@ export function startApp(root: HTMLElement) {
       { class: 'list' },
       songs.map((song) => {
         const first = instrumentFor(laneLines(song)[0] ?? { id: 'x', name: '' }, 0);
-        const thumb = icon(BOLT_SVG, 'thumb');
-        thumb.style.background = `linear-gradient(135deg, ${first.color}, #0b0b10 90%)`;
+        const thumb = song.coverUrl ? h('img', { class: 'thumb', src: song.coverUrl, alt: '' }) : icon(BOLT_SVG, 'thumb');
+        if (!song.coverUrl) thumb.style.background = `linear-gradient(135deg, ${first.color}, #0b0b10 90%)`;
         return h(
           'button',
           {

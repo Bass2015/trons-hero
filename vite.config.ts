@@ -1,9 +1,26 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
+import { readdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { VitePWA } from 'vite-plugin-pwa';
+
+/** The Ableton project files are the songs' source of truth in the repo, but they are not needed by the app. */
+function dropAbletonProjects(): Plugin {
+  return {
+    name: 'drop-ableton-projects',
+    apply: 'build',
+    closeBundle() {
+      const songs = join('dist', 'songs');
+      for (const slug of readdirSync(songs, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)) {
+        for (const f of readdirSync(join(songs, slug))) if (f.endsWith('.als') || f === 'import.json') rmSync(join(songs, slug, f));
+      }
+    },
+  };
+}
 
 export default defineConfig({
   base: '/trons-hero/',
   plugins: [
+    dropAbletonProjects(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png', 'branding/*'],
@@ -23,7 +40,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,json,mid,wav,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,json,mid,wav,woff2}'],
         navigateFallback: '/trons-hero/index.html',
       },
     }),

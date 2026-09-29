@@ -4,8 +4,8 @@ import { midiToNotes } from './midi';
 import { buildSong } from './loader';
 import type { SongSpec } from './types';
 
-const bytes = new Uint8Array(readFileSync(new URL('../../public/songs/batucada/batucada.mid', import.meta.url)));
-const spec = JSON.parse(readFileSync(new URL('../../public/songs/batucada/song.json', import.meta.url), 'utf8')) as SongSpec;
+const bytes = new Uint8Array(readFileSync(new URL('./__fixtures__/batucada.mid', import.meta.url)));
+const spec = JSON.parse(readFileSync(new URL('./__fixtures__/song.json', import.meta.url), 'utf8')) as SongSpec;
 
 describe('midiToNotes', () => {
   it('reads tempo and time signature', () => {

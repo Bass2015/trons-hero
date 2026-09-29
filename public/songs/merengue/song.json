@@ -1,8 +1,8 @@
 {
-  "title": "Pachuco",
-  "bpm": 113,
+  "title": "Merengue",
+  "bpm": 80,
   "beatsPerBar": 4,
-  "firstBar": 2,
+  "firstBar": 14,
   "lines": [
     {
       "id": "surdo",
@@ -38,6 +38,12 @@
       "id": "rocar",
       "name": "Rocar",
       "file": "rocar.mid",
+      "role": "hidden"
+    },
+    {
+      "id": "ferro",
+      "name": "Ferro",
+      "file": "ferro.mid",
       "role": "hidden"
     },
     {

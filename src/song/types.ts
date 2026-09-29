@@ -35,6 +35,10 @@ export interface SongSpec {
   bpm?: number;
   /** Beats per bar. Defaults to the MIDI time signature or 4. */
   beatsPerBar?: number;
+  /** Ableton bar number of the app's bar 1, so bar labels match the project. Defaults to 1. */
+  firstBar?: number;
+  /** Cover image, relative to the song folder. */
+  cover?: string;
   lines: LineSpec[];
 }
 
@@ -62,6 +66,9 @@ export interface Song {
   /** Total length in beats, rounded up to a whole bar. */
   lengthBeats: number;
   lines: Line[];
+  firstBar: number;
+  /** Absolute URL of the cover image, if any. */
+  coverUrl?: string;
   /** Base URL of the song folder, used to fetch samples. */
   baseUrl: string;
 }

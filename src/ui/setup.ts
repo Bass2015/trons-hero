@@ -98,6 +98,7 @@ export function setupScreen(ctx: AppContext, song: Song): HTMLElement {
     'div',
     { class: 'screen setup' },
     header(song.title, () => ctx.go.home('songs')),
+    song.coverUrl ? h('div', { class: 'cover-banner', style: { backgroundImage: `url("${song.coverUrl}")` } }, h('div', { class: 'cover-title' }, song.title)) : null,
     h('h3', { class: 'caps' }, t.chooseLine),
     cards,
     h('h3', { class: 'caps' }, t.mode),

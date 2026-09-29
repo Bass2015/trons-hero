@@ -1,8 +1,8 @@
 {
-  "title": "Pachuco",
-  "bpm": 113,
+  "title": "Mohicano",
+  "bpm": 170.841949,
   "beatsPerBar": 4,
-  "firstBar": 2,
+  "firstBar": 4,
   "lines": [
     {
       "id": "surdo",
@@ -41,10 +41,10 @@
       "role": "hidden"
     },
     {
-      "id": "claqueta",
-      "name": "Claqueta",
-      "file": "claqueta.mid",
-      "role": "click"
+      "id": "ferro",
+      "name": "Ferro",
+      "file": "ferro.mid",
+      "role": "hidden"
     }
   ],
   "cover": "cover.jpg"

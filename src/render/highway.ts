@@ -212,7 +212,7 @@ export class Highway {
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.font = `700 ${Math.round(14 * a.s + 4)}px ${FONT}`;
         ctx.textAlign = 'left';
-        ctx.fillText(String(Math.round(beat / game.song.beatsPerBar) + 1), a.x + 6, a.y - 4);
+        ctx.fillText(String(Math.round(beat / game.song.beatsPerBar) + game.song.firstBar), a.x + 6, a.y - 4);
       }
     });
 

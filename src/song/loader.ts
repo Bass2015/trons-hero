@@ -39,7 +39,17 @@ export async function buildSong(
   const finalBeatsPerBar = spec.beatsPerBar ?? beatsPerBar ?? 4;
   const lastBeat = Math.max(0, ...lines.flatMap((l) => l.notes.map((n) => n.beat + Math.max(n.durationBeats, 0.01))));
   const lengthBeats = Math.max(finalBeatsPerBar, Math.ceil(lastBeat / finalBeatsPerBar) * finalBeatsPerBar);
-  return { slug, title: spec.title, bpm: finalBpm, beatsPerBar: finalBeatsPerBar, lengthBeats, lines, baseUrl };
+  return {
+    slug,
+    title: spec.title,
+    bpm: finalBpm,
+    beatsPerBar: finalBeatsPerBar,
+    lengthBeats,
+    lines,
+    firstBar: spec.firstBar ?? 1,
+    coverUrl: spec.cover ? baseUrl + spec.cover : undefined,
+    baseUrl,
+  };
 }
 
 async function fetchJson<T = unknown>(url: string): Promise<T> {

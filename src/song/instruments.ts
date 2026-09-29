@@ -38,6 +38,7 @@ export const INSTRUMENTS: Instrument[] = [
   { id: 'caixa', name: 'Caixa', color: '#a855f7', sound: 'caixa', icon: drum('snare') },
   // not part of the practised lineup, but songs may carry it as a hidden line
   { id: 'rocar', name: 'Rocar', color: '#d9d9e3', sound: 'chocalho', icon: drum('tom') },
+  { id: 'ferro', name: 'Ferro', color: '#9aa4b2', sound: 'agogo', icon: drum('tom') },
 ];
 
 /** The six lines members practise; extra instruments (rocar) are excluded from positional fallbacks. */

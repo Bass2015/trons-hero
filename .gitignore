@@ -3,3 +3,5 @@ dist
 dev-dist
 .DS_Store
 public/icons/*.png
+ableton-projects/
+**/.DS_Store
