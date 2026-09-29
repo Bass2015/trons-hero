@@ -3,7 +3,6 @@ import { MODES, type Mode } from '../game/modes';
 import { t } from '../i18n/index';
 import { bindTaps } from '../input/taps';
 import { Highway } from '../render/highway';
-import { laneOrder } from '../render/laneOrder';
 import { instrumentFor } from '../song/instruments';
 import { laneLines, soundingLines, type Song } from '../song/types';
 import type { AppContext, PlayResume } from './app';
@@ -20,24 +19,14 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   const bars = song.lengthBeats / song.beatsPerBar;
   const lanes = laneLines(song);
   const instruments = lanes.map((l, i) => instrumentFor(l, i));
-  const myLane = lanes.findIndex((l) => l.id === lineId);
-  const mine = instruments[myLane]!;
+  const myLane = () => lanes.findIndex((l) => l.id === game.myLineId);
+  const mine = () => instruments[myLane()]!;
+  let highway: Highway | null = null;
 
-  // --- header: pause, bolt, title + time + progress, combo card
-  const playBtn = h('button', { class: 'icon-btn round' }, '❚❚');
-  const updatePlayBtn = () => {
-    playBtn.textContent = game.isPlaying ? '❚❚' : '▶';
-    playBtn.setAttribute('aria-label', game.isPlaying ? t.pause : t.play);
-  };
-  playBtn.onclick = () => {
-    if (game.isPlaying) game.pause();
-    else if (game.transport.state === 'paused') game.resume();
-    else start();
-    updatePlayBtn();
-  };
+  // --- header: bolt, title, time + scrub slider, combo card
   const timeEl = h('span', { class: 'time' }, '00:00');
-  const totalEl = h('span', { class: 'time total' }, ` / ${mmss(game.transport.secondsBetween(0, song.lengthBeats))}`);
-  const progressFill = h('div', { class: 'progress-fill' });
+  const totalEl = h('span', { class: 'time total' }, mmss(game.transport.secondsBetween(0, song.lengthBeats)));
+  const scrub = h('input', { type: 'range', class: 'scrub', min: '0', max: String(song.lengthBeats), step: '0.25', value: '0', 'aria-label': t.position }) as HTMLInputElement;
   const comboNum = h('div', { class: 'combo-num' }, '0');
   const comboCard = h('div', { class: 'combo-card' }, comboNum, h('div', { class: 'combo-label' }, t.combo));
   const pointsEl = h('div', { class: 'points' }, '0');
@@ -46,16 +35,41 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   const topbar = h(
     'div',
     { class: 'playbar' },
-    playBtn,
     bolt('small'),
-    h(
-      'div',
-      { class: 'play-title' },
-      h('div', { class: 'song-title' }, `${song.title}`),
-      h('div', { class: 'row tight' }, timeEl, totalEl, h('div', { class: 'progress' }, progressFill)),
-    ),
+    h('div', { class: 'play-title' }, h('div', { class: 'song-title' }, song.title), h('div', { class: 'row tight' }, timeEl, scrub, totalEl)),
     h('div', { class: 'col-right' }, comboCard, pointsEl),
   );
+
+  // scrubbing: silent while dragging, resumes where released
+  let scrubbing = false;
+  let wasPlaying = false;
+  const paintScrub = (beat: number) => {
+    scrub.value = String(beat);
+    scrub.style.setProperty('--pct', `${(Math.max(0, beat) / song.lengthBeats) * 100}%`);
+  };
+  scrub.addEventListener('pointerdown', () => {
+    scrubbing = true;
+    wasPlaying = game.isPlaying;
+    if (wasPlaying) game.pause();
+    updatePlayBtn();
+  });
+  scrub.addEventListener('input', () => {
+    const beat = Number(scrub.value);
+    game.transport.seek(beat);
+    paintScrub(beat);
+    refreshTime();
+  });
+  const endScrub = () => {
+    if (!scrubbing) return;
+    scrubbing = false;
+    game.seek(Number(scrub.value));
+    if (wasPlaying) game.resume();
+    refreshScore();
+    updatePlayBtn();
+  };
+  scrub.addEventListener('pointerup', endScrub);
+  scrub.addEventListener('pointercancel', endScrub);
+  scrub.addEventListener('keyup', endScrub);
 
   const refreshScore = () => {
     comboNum.textContent = String(game.score.streak);
@@ -67,32 +81,39 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
     const tr = game.transport;
     const beat = Math.min(Math.max(tr.currentBeat(), 0), song.lengthBeats);
     timeEl.textContent = mmss(tr.secondsBetween(0, beat));
-    totalEl.textContent = ` / ${mmss(tr.secondsBetween(0, song.lengthBeats))}`;
-    progressFill.style.width = `${(beat / song.lengthBeats) * 100}%`;
+    totalEl.textContent = mmss(tr.secondsBetween(0, song.lengthBeats));
     tempoVal.textContent = `${Math.round(tr.currentBpm * tr.rate)} ${t.bpm}`;
+    if (!scrubbing) paintScrub(beat);
   };
   const clock = setInterval(refreshTime, 200);
 
-  // --- highway + lane labels
+  // --- highway + tappable lane labels (absolutely positioned so they can glide with the lanes)
   const canvas = h('canvas', { class: 'highway' });
-  let highway: Highway | null = null;
-  const labels = h(
-    'div',
-    { class: 'lane-labels' },
-    laneOrder(instruments.length, myLane).map((i) => {
-      const inst = instruments[i]!;
-      const el = h('div', { class: `lane-label ${i === myLane ? 'mine' : ''}` }, icon(inst.icon, 'lane-icon'), h('span', {}, inst.name));
-      el.style.color = inst.color;
-      el.style.flex = String(i === myLane ? 1.6 : 1);
-      return el;
-    }),
-  );
+  const labelEls = instruments.map((inst, i) => {
+    const el = h('button', { class: 'lane-label', onclick: () => switchLine(lanes[i]!.id) }, icon(inst.icon, 'lane-icon'), h('span', {}, inst.name));
+    el.style.color = inst.color;
+    return el;
+  });
+  const labels = h('div', { class: 'lane-labels' }, labelEls);
+  const layoutLabels = () => {
+    const layout = highway?.targetLayout(100);
+    labelEls.forEach((el, i) => {
+      const g = layout?.[i];
+      if (g) {
+        el.style.left = `${g.x0}%`;
+        el.style.width = `${g.w}%`;
+      }
+      el.classList.toggle('mine', i === myLane());
+    });
+  };
 
   // --- tap buttons
   const left = h('button', { class: 'tap-btn left' }, h('span', {}, t.left), h('kbd', {}, 'V'));
   const right = h('button', { class: 'tap-btn right' }, h('span', {}, t.right), h('kbd', {}, 'N'));
-  left.style.setProperty('--c', mine.color);
-  right.style.setProperty('--c', mine.color);
+  const paintTaps = () => {
+    for (const el of [left, right]) el.style.setProperty('--c', mine().color);
+  };
+  paintTaps();
   const pulse = (el: HTMLElement) => {
     el.classList.remove('pulse');
     void el.offsetWidth;
@@ -104,11 +125,38 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   });
 
   game.onHit = (e) => {
-    highway?.flash(myLane, e.verdict, e.points);
+    highway?.flash(myLane(), e.verdict, e.points);
     refreshScore();
   };
 
-  // --- compact controls: mode, restart, loop, mixer, tempo
+  // --- big transport button
+  const playBtn = h('button', { class: 'pause-btn' }, t.pause);
+  const updatePlayBtn = () => {
+    const playing = game.isPlaying;
+    playBtn.textContent = playing ? `❚❚  ${t.pause}` : game.transport.state === 'paused' ? `▶  ${t.resume}` : `▶  ${t.play}`;
+    playBtn.classList.toggle('playing', playing);
+  };
+  playBtn.onclick = () => {
+    if (game.isPlaying) game.pause();
+    else if (game.transport.state === 'paused') game.resume();
+    else start();
+    updatePlayBtn();
+  };
+
+  // --- line switch: in place, lanes glide, labels follow
+  function switchLine(id: string) {
+    if (id === game.myLineId) return;
+    highway?.beginLaneTransition();
+    game.setMyLine(id);
+    s.lastLine[song.slug] = id;
+    ctx.save();
+    layoutLabels();
+    paintTaps();
+    refreshScore();
+    refreshMixer();
+  }
+
+  // --- compact controls: mode, restart, mixer, metronome, loop, tempo
   const modeBar = h('div', { class: 'segmented small' });
   const renderModes = () =>
     modeBar.replaceChildren(
@@ -132,20 +180,6 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   renderModes();
 
   const restartBtn = h('button', { class: 'ctl-btn', onclick: () => start() }, t.restart);
-
-  // instrument switch: re-mounts the screen for the new line at the same position
-  const instSel = h('select', { class: 'inst-select', 'aria-label': t.instrument }) as HTMLSelectElement;
-  lanes.forEach((l, i) => instSel.append(h('option', { value: l.id, selected: l.id === lineId }, instruments[i]!.name)));
-  instSel.style.setProperty('--c', mine.color);
-  instSel.onchange = () => {
-    const beat = Math.max(0, game.transport.currentBeat());
-    const paused = !game.isPlaying;
-    teardown();
-    ctx.go.play(song, instSel.value, { beat, paused });
-  };
-
-  const instRow = h('div', { class: 'row inst-row' }, icon(mine.icon, 'lane-icon'), instSel);
-  instRow.style.color = mine.color;
 
   const metro = h('input', { type: 'checkbox', checked: s.metronome }) as HTMLInputElement;
   metro.onchange = () => {
@@ -219,7 +253,7 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
 
   game.onFinish = () => {
     teardown();
-    ctx.go.results(song, lineId, game.score);
+    ctx.go.results(song, game.myLineId, game.score);
   };
 
   const screen = h(
@@ -229,10 +263,10 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
     h('div', { class: 'highway-wrap' }, canvas),
     labels,
     h('div', { class: 'taps' }, left, right),
+    playBtn,
     h(
       'div',
       { class: 'controls' },
-      h('div', { class: 'row' }, instRow, h('span', { class: 'grow' }), h('label', { class: 'chk' }, metro, ` ${t.metronome}`)),
       h('div', { class: 'row' }, modeBar, restartBtn, mixerBtn),
       mixer,
       h(
@@ -241,9 +275,9 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
         h('label', { class: 'chk' }, loopChk, ` ${t.loop}`),
         h('span', {}, t.loopFrom), fromSel, h('span', {}, t.loopTo), toSel,
         h('span', { class: 'grow' }),
-        h('button', { class: 'ctl-btn ghost', onclick: () => { teardown(); ctx.go.setup(song); } }, `‹ ${t.back}`),
+        h('label', { class: 'chk' }, metro, ` ${t.metronome}`),
       ),
-      h('label', { class: 'row' }, h('span', {}, t.tempo), tempo, tempoVal),
+      h('div', { class: 'row' }, h('span', {}, t.tempo), tempo, tempoVal, h('button', { class: 'ctl-btn ghost', onclick: () => { teardown(); ctx.go.setup(song); } }, `‹ ${t.back}`)),
     ),
   );
 
@@ -251,6 +285,7 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   requestAnimationFrame(() => {
     highway = new Highway(canvas, game, instruments, { visibleSeconds: s.visibleSeconds, hideNotes: s.hideNotes, noteScale: NOTE_SCALE });
     highway.start();
+    layoutLabels();
     if (resume) {
       game.start(resume.beat);
       if (resume.paused) game.pause();

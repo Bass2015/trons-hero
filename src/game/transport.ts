@@ -140,6 +140,16 @@ export class Transport {
     this.pausedBeat = this.startBeat;
   }
 
+  /** Moves the playhead. Keeps playing if it was playing. */
+  seek(beat: number) {
+    if (this.state === 'playing') {
+      this.anchorTime = this.now();
+      this.anchorBeat = beat;
+    } else {
+      this.pausedBeat = beat;
+    }
+  }
+
   /** Changes speed without moving the current position. */
   setRate(rate: number) {
     const beat = this.currentBeat();

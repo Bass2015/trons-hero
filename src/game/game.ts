@@ -28,9 +28,10 @@ export interface GameOptions {
 export class Game {
   readonly transport: Transport;
   readonly scheduler: Scheduler;
-  readonly judge: Judge;
+  judge: Judge;
   readonly score = new Score();
-  readonly myLine: Line;
+  myLine: Line;
+  myLineId: string;
   mode: Mode;
   offsetMs: number;
   lineStates: Record<string, LineState>;
@@ -41,12 +42,13 @@ export class Game {
   constructor(
     readonly engine: AudioEngine,
     readonly song: Song,
-    readonly myLineId: string,
+    myLineId: string,
     opts: GameOptions,
   ) {
     const line = song.lines.find((l) => l.id === myLineId);
     if (!line) throw new Error(`Línea desconocida: ${myLineId}`);
     this.myLine = line;
+    this.myLineId = myLineId;
     this.mode = opts.mode;
     this.offsetMs = opts.offsetMs;
     this.transport = new Transport({ tempo: new TempoMap(song.tempos ?? song.bpm), beatsPerBar: song.beatsPerBar, lengthBeats: song.lengthBeats, now: () => engine.now });
@@ -83,7 +85,31 @@ export class Game {
 
   resume() {
     this.transport.resume();
+    this.lastPassBeat = this.transport.currentBeat();
     this.scheduler.start();
+  }
+
+  /** Jumps to a beat. Notes before it are skipped, not missed. Sound stays off while paused. */
+  seek(beat: number) {
+    const playing = this.isPlaying;
+    this.scheduler.stop();
+    this.transport.seek(beat);
+    this.judge.resetAll();
+    this.judge.ignoreBefore(beat);
+    this.lastPassBeat = beat;
+    if (playing) this.scheduler.start();
+  }
+
+  /** Switches the player's line in place: new judge, fresh score, same position and state. */
+  setMyLine(lineId: string) {
+    const line = this.song.lines.find((l) => l.id === lineId);
+    if (!line || lineId === this.myLineId) return;
+    this.myLine = line;
+    this.myLineId = lineId;
+    this.judge = new Judge(line.notes);
+    this.judge.ignoreBefore(this.transport.currentBeat());
+    this.score.reset();
+    this.setMode(this.mode);
   }
 
   stop() {

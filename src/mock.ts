@@ -60,17 +60,13 @@ seek(4.5);
 
 // --- screen ---------------------------------------------------------------------
 const canvas = h('canvas', { class: 'highway' });
-const labels = h(
-  'div',
-  { class: 'lane-labels' },
-  laneOrder(instruments.length, myLane).map((i) => {
-    const inst = instruments[i]!;
-    const el = h('div', { class: `lane-label ${i === myLane ? 'mine' : ''}` }, icon(inst.icon, 'lane-icon'), h('span', {}, inst.name));
-    el.style.color = inst.color;
-    el.style.flex = String(i === myLane ? 1.6 : 1);
-    return el;
-  }),
-);
+const labelEls = instruments.map((inst, i) => {
+  const el = h('div', { class: `lane-label ${i === myLane ? 'mine' : ''}` }, icon(inst.icon, 'lane-icon'), h('span', {}, inst.name));
+  el.style.color = inst.color;
+  return el;
+});
+const labels = h('div', { class: 'lane-labels' }, labelEls);
+void laneOrder;
 const left = h('button', { class: 'tap-btn left' }, h('span', {}, t.left), h('kbd', {}, 'V'));
 const right = h('button', { class: 'tap-btn right' }, h('span', {}, t.right), h('kbd', {}, 'N'));
 left.style.setProperty('--c', mine.color);
@@ -154,5 +150,9 @@ document.getElementById('app')!.append(
 requestAnimationFrame(() => {
   highway = new Highway(canvas, game, instruments, { visibleSeconds: 1.6, hideNotes: false, noteScale: START_SCALE });
   highway.start();
+  highway.targetLayout(100).forEach((g, i) => {
+    labelEls[i]!.style.left = `${g.x0}%`;
+    labelEls[i]!.style.width = `${g.w}%`;
+  });
   refresh();
 });

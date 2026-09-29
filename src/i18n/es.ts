@@ -19,6 +19,7 @@ export const es: Dict = {
   },
   speed: 'Velocidad',
   tempo: 'Tempo',
+  position: 'Posición',
   bpm: 'bpm',
   metronome: 'Metrónomo',
   hideNotes: 'Ocultar notas',

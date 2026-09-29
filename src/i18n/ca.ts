@@ -17,6 +17,7 @@ export const ca = {
   } as Record<string, string>,
   speed: 'Velocitat',
   tempo: 'Tempo',
+  position: 'Posició',
   bpm: 'bpm',
   metronome: 'Metrònom',
   hideNotes: 'Amagar notes',

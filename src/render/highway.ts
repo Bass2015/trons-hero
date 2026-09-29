@@ -24,6 +24,14 @@ export interface HighwayOptions {
 
 const FONT = '"Barlow Condensed", system-ui, sans-serif';
 const FLASH_MS = 550;
+export const LANE_ANIM_MS = 450;
+
+export interface LaneGeom {
+  x0: number;
+  x1: number;
+  cx: number;
+  w: number;
+}
 
 /**
  * Perspective highway: lanes converge to a vanishing point on the horizon,
@@ -40,6 +48,8 @@ export class Highway {
   private sprites = new Map<string, HTMLCanvasElement>();
   /** Lines that have a lane, in song order; `instruments` is parallel to this. */
   private lines: Line[];
+  private animFrom: LaneGeom[] | null = null;
+  private animStart = 0;
   opts: HighwayOptions;
 
   constructor(
@@ -98,20 +108,44 @@ export class Highway {
     return this.h * 0.84;
   }
 
-  /** Lane spans at the strike line (full width), indexed by line; the player's line sits in the middle. */
-  private lanesAtStrike() {
+  /** Target lane spans at the strike line as fractions of the width, indexed by line. */
+  targetLayout(width = 1): LaneGeom[] {
     const n = this.instruments.length;
     const myLane = this.myLane;
     const order = laneOrder(n, myLane);
     const total = n - 1 + (myLane >= 0 ? 1.6 : 1);
-    const out: { x0: number; x1: number; cx: number; w: number }[] = new Array(n);
+    const out: LaneGeom[] = new Array(n);
     let x = 0;
     for (const li of order) {
-      const w = (this.w * (li === myLane ? 1.6 : 1)) / total;
+      const w = (width * (li === myLane ? 1.6 : 1)) / total;
       out[li] = { x0: x, x1: x + w, cx: x + w / 2, w };
       x += w;
     }
     return out;
+  }
+
+  /** Call right before the player's line changes: the lanes glide to their new places. */
+  beginLaneTransition() {
+    this.animFrom = this.lanesAtStrike();
+    this.animStart = performance.now();
+  }
+
+  /** Lane spans at the strike line, indexed by line, interpolated while a transition runs. */
+  private lanesAtStrike(): LaneGeom[] {
+    const target = this.targetLayout(this.w);
+    if (!this.animFrom) return target;
+    const t = Math.min(1, (performance.now() - this.animStart) / LANE_ANIM_MS);
+    if (t >= 1) {
+      this.animFrom = null;
+      return target;
+    }
+    const k = 1 - Math.pow(1 - t, 3); // ease-out cubic
+    return target.map((g, i) => {
+      const f = this.animFrom![i] ?? g;
+      const x0 = f.x0 + (g.x0 - f.x0) * k;
+      const x1 = f.x1 + (g.x1 - f.x1) * k;
+      return { x0, x1, cx: (x0 + x1) / 2, w: x1 - x0 };
+    });
   }
 
   private get myLane() {
