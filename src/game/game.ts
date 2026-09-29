@@ -5,6 +5,7 @@ import { presetStates, type LineState, type Mode } from './modes';
 import { Scheduler } from './scheduler';
 import { Score } from './score';
 import { Transport, type LoopRange } from './transport';
+import { TempoMap } from './tempoMap';
 
 export type Hand = 'left' | 'right';
 
@@ -48,7 +49,7 @@ export class Game {
     this.myLine = line;
     this.mode = opts.mode;
     this.offsetMs = opts.offsetMs;
-    this.transport = new Transport({ bpm: song.bpm, beatsPerBar: song.beatsPerBar, lengthBeats: song.lengthBeats, now: () => engine.now });
+    this.transport = new Transport({ tempo: new TempoMap(song.tempos ?? song.bpm), beatsPerBar: song.beatsPerBar, lengthBeats: song.lengthBeats, now: () => engine.now });
     this.transport.setRate(opts.rate);
     this.judge = new Judge(line.notes);
     this.lineStates = presetStates(opts.mode, song.lines.map((l) => l.id), myLineId);

@@ -13,7 +13,9 @@ exportar cada instrumento como clip MIDI a mano.
 
 El importador lee todos los clips MIDI del arrangement, desenrolla los loops, y escribe un
 `.mid` por línea más el `song.json`. Se mantienen los números de compás de Ableton, el tempo y
-el compás del set. Las notas desactivadas se ignoran.
+el compás del set. Las notas desactivadas se ignoran. Si el set tiene **automatización de
+tempo**, se importa como mapa de tempos (`tempos` en `song.json`) y la app sigue los cambios;
+las rampas se aproximan en escalones de un pulso.
 
 Mapeo por defecto según el nombre de la pista (mayúsculas y espacios no importan):
 
@@ -90,6 +92,7 @@ archivos MIDI. La forma más sencilla desde Ableton es **un archivo MIDI por ins
 | `bpm` | no | Tempo. Si falta, se lee del MIDI (Ableton lo incluye). |
 | `beatsPerBar` | no | Pulsos por compás. Si falta, se lee del MIDI o se usa 4. |
 | `firstBar` | no | Número de compás (de Ableton) del primer compás de la app. Por defecto 1. |
+| `tempos` | no | Cambios de tempo: `[{ "beat": 0, "bpm": 136 }, { "beat": 60, "bpm": 144 }]` en pulsos de la app. `bpm` es el tempo inicial. |
 | `cover` | no | Imagen de portada, relativa a la carpeta. |
 | `lines[].id` | sí | Identificador corto, sin espacios. |
 | `lines[].name` | sí | Nombre que se muestra en el carril. |

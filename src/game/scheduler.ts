@@ -51,7 +51,7 @@ export class Scheduler {
       this.cursorTime = t.timeAt(this.cursorBeat);
     } else {
       // cursor already wrapped into the next loop pass
-      this.cursorTime = t.timeAt(t.loopEndBeat) + (this.cursorBeat - t.loopStartBeat) * t.secondsPerBeat;
+      this.cursorTime = t.timeAt(t.loopEndBeat) + t.secondsBetween(t.loopStartBeat, this.cursorBeat);
     }
   }
 
@@ -61,16 +61,15 @@ export class Scheduler {
     const endTime = this.engine.now + HORIZON_S;
     let guard = 0;
     while (this.cursorTime < endTime && guard++ < 8) {
-      const spb = t.secondsPerBeat;
       const segEndBeat = t.loop ? t.loopEndBeat : t.lengthBeats + 1e-6;
       if (this.cursorBeat >= segEndBeat) {
         if (!t.loop) return; // song over, nothing more to schedule
         this.cursorBeat = t.loopStartBeat;
       }
-      const segEndTime = this.cursorTime + (segEndBeat - this.cursorBeat) * spb;
+      const segEndTime = this.cursorTime + t.secondsBetween(this.cursorBeat, segEndBeat);
       const sliceEndTime = Math.min(endTime, segEndTime);
-      const sliceEndBeat = sliceEndTime >= segEndTime ? segEndBeat : this.cursorBeat + (sliceEndTime - this.cursorTime) / spb;
-      this.scheduleSlice(this.cursorBeat, sliceEndBeat, this.cursorTime, spb);
+      const sliceEndBeat = sliceEndTime >= segEndTime ? segEndBeat : t.beatAfter(this.cursorBeat, sliceEndTime - this.cursorTime);
+      this.scheduleSlice(this.cursorBeat, sliceEndBeat, this.cursorTime);
       if (sliceEndTime >= segEndTime && t.loop) {
         this.cursorBeat = t.loopStartBeat;
       } else {
@@ -80,9 +79,9 @@ export class Scheduler {
     }
   }
 
-  private scheduleSlice(fromBeat: number, toBeat: number, fromTime: number, spb: number) {
+  private scheduleSlice(fromBeat: number, toBeat: number, fromTime: number) {
     if (toBeat <= fromBeat) return;
-    const timeOf = (beat: number) => fromTime + (beat - fromBeat) * spb;
+    const timeOf = (beat: number) => fromTime + this.transport.secondsBetween(fromBeat, beat);
     // count-in clicks before beat 0; then either the song's own click track or a continuous metronome
     const click = clickLine(this.song);
     if (this.metronome || fromBeat < 0) {

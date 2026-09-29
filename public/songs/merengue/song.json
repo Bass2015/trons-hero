@@ -1,6 +1,6 @@
 {
   "title": "Merengue",
-  "bpm": 80,
+  "bpm": 136,
   "beatsPerBar": 4,
   "firstBar": 14,
   "lines": [
@@ -51,6 +51,32 @@
       "name": "Claqueta",
       "file": "claqueta.mid",
       "role": "click"
+    }
+  ],
+  "tempos": [
+    {
+      "beat": 0,
+      "bpm": 136
+    },
+    {
+      "beat": 60,
+      "bpm": 144
+    },
+    {
+      "beat": 290,
+      "bpm": 95
+    },
+    {
+      "beat": 322,
+      "bpm": 190
+    },
+    {
+      "beat": 466,
+      "bpm": 95
+    },
+    {
+      "beat": 474,
+      "bpm": 190
     }
   ],
   "cover": "cover.jpg"

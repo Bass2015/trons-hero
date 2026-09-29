@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { Transport } from './transport';
+import { TempoMap } from './tempoMap';
 
 function make(opts: Partial<ConstructorParameters<typeof Transport>[0]> = {}) {
   let t = 0;
-  const tr = new Transport({ bpm: 120, beatsPerBar: 4, lengthBeats: 16, now: () => t, ...opts });
+  const tr = new Transport({ tempo: 120, beatsPerBar: 4, lengthBeats: 16, now: () => t, ...opts });
   return { tr, advance: (s: number) => (t += s), time: () => t };
 }
 
@@ -63,5 +64,20 @@ describe('Transport', () => {
     expect(tr.isFinished()).toBe(false);
     advance(0.2);
     expect(tr.isFinished()).toBe(true);
+  });
+
+  it('follows tempo changes when converting time to beats', () => {
+    let t = 0;
+    const tr = new Transport({ tempo: new TempoMap([{ beat: 0, bpm: 120 }, { beat: 4, bpm: 60 }]), beatsPerBar: 4, lengthBeats: 16, now: () => t });
+    tr.play(0);
+    t = 2; // 4 beats at 120
+    expect(tr.currentBeat()).toBeCloseTo(4);
+    t = 4; // + 2 beats at 60
+    expect(tr.currentBeat()).toBeCloseTo(6);
+    expect(tr.currentBpm).toBe(60);
+    expect(tr.timeAt(8)).toBeCloseTo(6);
+    tr.setRate(2);
+    t = 5; // 1 s at double speed = 2 beats at 60
+    expect(tr.currentBeat()).toBeCloseTo(8);
   });
 });

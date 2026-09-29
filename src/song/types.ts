@@ -37,6 +37,8 @@ export interface SongSpec {
   beatsPerBar?: number;
   /** Ableton bar number of the app's bar 1, so bar labels match the project. Defaults to 1. */
   firstBar?: number;
+  /** Tempo changes, in app beats. When present, `bpm` is the tempo at beat 0. */
+  tempos?: { beat: number; bpm: number }[];
   /** Cover image, relative to the song folder. */
   cover?: string;
   lines: LineSpec[];
@@ -67,6 +69,8 @@ export interface Song {
   lengthBeats: number;
   lines: Line[];
   firstBar: number;
+  /** Tempo changes, if the song has any; `bpm` is the initial tempo. */
+  tempos?: { beat: number; bpm: number }[];
   /** Absolute URL of the cover image, if any. */
   coverUrl?: string;
   /** Base URL of the song folder, used to fetch samples. */

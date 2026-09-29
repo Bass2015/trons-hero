@@ -1,6 +1,7 @@
 import type { Line, Song, SongSpec } from './types';
 import { midiToNotes } from './midi';
 import { instrumentFor } from './instruments';
+import { TempoMap } from '../game/tempoMap';
 
 const SONGS_URL = `${import.meta.env.BASE_URL}songs/`;
 
@@ -35,7 +36,8 @@ export async function buildSong(
     beatsPerBar ??= parsed.beatsPerBar;
     lines.push({ ...l, sound: l.sound ?? instrumentFor(l, i).sound, notes: parsed.notes });
   }
-  const finalBpm = spec.bpm ?? bpm ?? 120;
+  const tempos = spec.tempos && spec.tempos.length > 1 ? [...spec.tempos].sort((a, b) => a.beat - b.beat) : undefined;
+  const finalBpm = spec.bpm ?? tempos?.[0]?.bpm ?? bpm ?? 120;
   const finalBeatsPerBar = spec.beatsPerBar ?? beatsPerBar ?? 4;
   const lastBeat = Math.max(0, ...lines.flatMap((l) => l.notes.map((n) => n.beat + Math.max(n.durationBeats, 0.01))));
   const lengthBeats = Math.max(finalBeatsPerBar, Math.ceil(lastBeat / finalBeatsPerBar) * finalBeatsPerBar);
@@ -47,6 +49,7 @@ export async function buildSong(
     lengthBeats,
     lines,
     firstBar: spec.firstBar ?? 1,
+    tempos,
     coverUrl: spec.cover ? baseUrl + spec.cover : undefined,
     baseUrl,
   };
@@ -62,4 +65,9 @@ async function fetchBytes(url: string): Promise<ArrayBuffer> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`No se pudo cargar ${url} (${res.status})`);
   return res.arrayBuffer();
+}
+
+/** Total duration in seconds at the song's own tempo(s). */
+export function songDuration(song: Pick<Song, 'bpm' | 'tempos' | 'lengthBeats'>): number {
+  return new TempoMap(song.tempos ?? song.bpm).secondsBetween(0, song.lengthBeats);
 }

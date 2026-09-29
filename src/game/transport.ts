@@ -1,3 +1,5 @@
+import { TempoMap } from './tempoMap';
+
 export interface LoopRange {
   /** First bar of the loop, 0-based, inclusive. */
   startBar: number;
@@ -12,7 +14,7 @@ export type TransportState = 'stopped' | 'playing' | 'paused';
  * All position math lives here so the scheduler, renderer and judge agree.
  */
 export class Transport {
-  bpm: number;
+  readonly map: TempoMap;
   beatsPerBar: number;
   lengthBeats: number;
   /** Playback rate multiplier, 1 = song tempo. */
@@ -27,8 +29,8 @@ export class Transport {
   private pausedBeat = 0;
   private readonly now: () => number;
 
-  constructor(opts: { bpm: number; beatsPerBar: number; lengthBeats: number; now: () => number; countInBars?: number }) {
-    this.bpm = opts.bpm;
+  constructor(opts: { tempo: TempoMap | number; beatsPerBar: number; lengthBeats: number; now: () => number; countInBars?: number }) {
+    this.map = opts.tempo instanceof TempoMap ? opts.tempo : new TempoMap(opts.tempo);
     this.beatsPerBar = opts.beatsPerBar;
     this.lengthBeats = opts.lengthBeats;
     this.now = opts.now;
@@ -39,13 +41,38 @@ export class Transport {
     return this._rate;
   }
 
-  /** Seconds per beat at the current rate. */
+  /** Tempo of the song (before the rate) at the start. */
+  get bpm() {
+    return this.map.initialBpm;
+  }
+
+  /** Position without loop handling, used for local tempo lookups. */
+  private rawBeat() {
+    return this.state === 'playing' ? this.beatAt(this.now()) : this.pausedBeat;
+  }
+
+  /** Song tempo at the current position, before the rate. */
+  get currentBpm() {
+    return this.map.bpmAt(this.rawBeat());
+  }
+
+  /** Seconds per beat at the current position and rate. */
   get secondsPerBeat() {
-    return 60 / (this.bpm * this._rate);
+    return 60 / (this.currentBpm * this._rate);
   }
 
   get msPerBeat() {
     return this.secondsPerBeat * 1000;
+  }
+
+  /** Seconds between two beats at the current rate, following tempo changes. */
+  secondsBetween(from: number, to: number) {
+    return this.map.secondsBetween(from, to) / this._rate;
+  }
+
+  /** Beat reached `seconds` after `from` at the current rate. */
+  beatAfter(from: number, seconds: number) {
+    return this.map.beatAfter(from, seconds * this._rate);
   }
 
   get loopStartBeat() {
@@ -63,12 +90,12 @@ export class Transport {
 
   /** Raw mapping, ignoring loop wrap. */
   beatAt(time: number): number {
-    if (this.state === 'playing') return this.anchorBeat + (time - this.anchorTime) / this.secondsPerBeat;
+    if (this.state === 'playing') return this.beatAfter(this.anchorBeat, time - this.anchorTime);
     return this.pausedBeat;
   }
 
   timeAt(beat: number): number {
-    return this.anchorTime + (beat - this.anchorBeat) * this.secondsPerBeat;
+    return this.anchorTime + this.secondsBetween(this.anchorBeat, beat);
   }
 
   /**
@@ -81,11 +108,11 @@ export class Transport {
     let beat = this.beatAt(t);
     if (this.loop) {
       const end = this.loopEndBeat;
-      const len = end - this.loopStartBeat;
-      while (beat >= end) {
+      let guard = 0;
+      while (beat >= end && guard++ < 1000) {
         this.anchorTime = this.timeAt(end);
         this.anchorBeat = this.loopStartBeat;
-        beat -= len;
+        beat = this.beatAt(t);
       }
     }
     return beat;

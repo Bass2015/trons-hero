@@ -141,9 +141,8 @@ export class Highway {
     const myLane = this.myLane;
     const horizonY = this.horizonY;
     const strikeY = this.strikeY;
-    const visibleBeats = this.opts.visibleSeconds / spb;
-    const farBeat = beatNow + visibleBeats * 1.4;
-    const nearBeat = beatNow - 0.35 / spb;
+    const farBeat = tr.beatAfter(beatNow, this.opts.visibleSeconds * 1.4);
+    const nearBeat = tr.beatAfter(beatNow, -0.35);
 
     this.bg.draw(ctx, w, h, horizonY, this.dpr);
 
@@ -197,7 +196,7 @@ export class Highway {
 
     // beat / bar lines
     this.forVisibleBeats(nearBeat, farBeat, (beat, displayBeat) => {
-      const d = (displayBeat - beatNow) * spb;
+      const d = tr.secondsBetween(beatNow, displayBeat);
       if (d > this.opts.visibleSeconds * 1.4) return;
       const isBar = Math.abs(beat / game.song.beatsPerBar - Math.round(beat / game.song.beatsPerBar)) < 1e-6;
       const a = this.project(0, d);
@@ -222,7 +221,7 @@ export class Highway {
       ctx.lineWidth = 2;
       ctx.strokeStyle = '#ffd60a';
       for (const b of [tr.loopStartBeat, tr.loopEndBeat]) {
-        const d = (b - beatNow) * spb;
+        const d = tr.secondsBetween(beatNow, b);
         if (d < -0.35 || d > this.opts.visibleSeconds * 1.4) continue;
         const a = this.project(0, d);
         const c = this.project(w, d);
@@ -269,7 +268,7 @@ export class Highway {
         const baseW = l.w * (mine ? 0.7 : 0.62) * (this.opts.noteScale ?? 1);
         line.notes.forEach((n, ni) => {
           for (const displayBeat of this.wrapCandidates(n.beat, nearBeat, farBeat)) {
-            const d = (displayBeat - beatNow) * spb;
+            const d = tr.secondsBetween(beatNow, displayBeat);
             if (d > this.opts.visibleSeconds * 1.35) continue;
             const p = this.project(l.cx, d);
             let alpha = state === 'muted' ? 0.35 : 1;
@@ -282,7 +281,7 @@ export class Highway {
               } else if (res === 'skip') {
                 alpha = 0.35;
               } else if (res) {
-                alpha = Math.max(0, 1 - (beatNow - n.beat) * spb * 4);
+                alpha = Math.max(0, 1 - tr.secondsBetween(n.beat, beatNow) * 4);
               }
             }
             // fade in at the far end

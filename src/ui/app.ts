@@ -2,7 +2,7 @@ import { AudioEngine } from '../audio/engine';
 import type { Score } from '../game/score';
 import { detectLang, setLang, t } from '../i18n/index';
 import { instrumentFor } from '../song/instruments';
-import { listSongs, loadSong } from '../song/loader';
+import { listSongs, loadSong, songDuration } from '../song/loader';
 import { laneLines, type Song } from '../song/types';
 import { loadSettings, saveSettings, type Settings } from '../state/settings';
 import { BOLT_SVG, logo } from './brand';
@@ -130,7 +130,7 @@ export function startApp(root: HTMLElement) {
           },
           thumb,
           h('div', { class: 'song-meta' }, h('div', { class: 'song-title' }, song.title), h('div', { class: 'hint small' }, `${t.groupName} · ${laneLines(song).length} ${t.lines}`)),
-          h('div', { class: 'song-dur' }, mmss((song.lengthBeats * 60) / song.bpm)),
+          h('div', { class: 'song-dur' }, mmss(songDuration(song))),
         );
       }),
     );

@@ -35,12 +35,46 @@ if (!alsFile) {
 const overrides = existsSync(join(folder, 'import.json')) ? JSON.parse(readFileSync(join(folder, 'import.json'), 'utf8')) : {};
 
 // --- parse -----------------------------------------------------------------------
-const LIST_TAGS = new Set(['MidiTrack', 'AudioTrack', 'GroupTrack', 'MidiClip', 'KeyTrack', 'MidiNoteEvent']);
+const LIST_TAGS = new Set(['MidiTrack', 'AudioTrack', 'GroupTrack', 'MidiClip', 'KeyTrack', 'MidiNoteEvent', 'AutomationEnvelope', 'FloatEvent']);
 const xml = gunzipSync(readFileSync(join(folder, alsFile))).toString('utf8');
 const doc = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '', isArray: (name) => LIST_TAGS.has(name), parseAttributeValue: false }).parse(xml);
 const liveSet = doc.Ableton.LiveSet;
 const main = liveSet.MainTrack ?? liveSet.MasterTrack;
-const bpm = Number(main.DeviceChain.Mixer.Tempo.Manual.Value);
+const tempoNode = main.DeviceChain.Mixer.Tempo;
+const manualBpm = Number(tempoNode.Manual.Value);
+// tempo automation (steps; ramps are subdivided per beat)
+const tempoEvents = [];
+const targetId = tempoNode.AutomationTarget?.Id;
+for (const env of main.AutomationEnvelopes?.Envelopes?.AutomationEnvelope ?? []) {
+  if (String(env.EnvelopeTarget?.PointeeId?.Value) !== String(targetId)) continue;
+  for (const e of env.Automation?.Events?.FloatEvent ?? []) tempoEvents.push({ time: Number(e.Time), bpm: Number(e.Value) });
+}
+/** Piecewise tempo in arrangement beats: [{beat, bpm}], first entry is the initial tempo. */
+function tempoSteps(events) {
+  if (!events.length) return [{ beat: 0, bpm: manualBpm }];
+  const steps = [];
+  let initial = events.filter((e) => e.time <= 0).at(-1)?.bpm ?? events[0].bpm;
+  steps.push({ beat: 0, bpm: initial });
+  const later = events.filter((e) => e.time > 0);
+  for (let i = 0; i < later.length; i++) {
+    const cur = later[i];
+    const prev = i ? later[i - 1] : { time: 0, bpm: initial };
+    if (cur.time > prev.time && Math.abs(cur.bpm - prev.bpm) > 1e-6) {
+      // ramp: one step per beat
+      for (let b = Math.ceil(prev.time); b < cur.time; b++) steps.push({ beat: b, bpm: prev.bpm + ((cur.bpm - prev.bpm) * (b - prev.time)) / (cur.time - prev.time) });
+    }
+    steps.push({ beat: cur.time, bpm: cur.bpm });
+  }
+  // keep the last value at each beat, drop repeats
+  const out = [];
+  for (const st of steps) {
+    if (out.length && Math.abs(out.at(-1).beat - st.beat) < 1e-9) out[out.length - 1] = st;
+    else if (!out.length || Math.abs(out.at(-1).bpm - st.bpm) > 1e-6) out.push(st);
+  }
+  return out;
+}
+const tempoMapArr = tempoSteps(tempoEvents);
+const bpm = tempoMapArr[0].bpm;
 const sig = decodeTimeSignature(Number(main.DeviceChain.Mixer.TimeSignature.Manual.Value));
 const beatsPerBar = sig.numerator * (4 / sig.denominator);
 const val = (x) => (x && x.Value !== undefined ? x.Value : undefined);
@@ -127,12 +161,18 @@ for (const l of all) {
 // --- write -----------------------------------------------------------------------
 const order = [...INSTRUMENTS.map((i) => i.id), 'ferro', 'claqueta'];
 const sorted = all.filter((l) => l.notes.length).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-const spec = { title: overrides.title ?? titleCase(basename(alsFile, '.als')), bpm, beatsPerBar, firstBar, lines: [] };
+// tempo map in app beats: collapse everything before the start into the initial tempo
+const shifted = tempoMapArr.map((p) => ({ beat: Math.round((p.beat - offset) * 1e6) / 1e6, bpm: Math.round(p.bpm * 1000) / 1000 })).filter((p) => p.beat < endBeat - offset);
+const startIdx = Math.max(0, shifted.findLastIndex((p) => p.beat <= 0));
+const tempos = [{ beat: 0, bpm: shifted[startIdx].bpm }, ...shifted.slice(startIdx + 1)];
+const spec = { title: overrides.title ?? titleCase(basename(alsFile, '.als')), bpm: tempos[0].bpm, beatsPerBar, firstBar, lines: [] };
+if (tempos.length > 1) spec.tempos = tempos;
+if (tempoEvents.length) console.log(`  tempo automation: ${tempos.map((p) => `${p.bpm} bpm @ bar ${Math.floor(p.beat / beatsPerBar) + firstBar}`).join(', ')}`);
 const cover = overrides.cover ?? (existsSync(join(folder, 'cover.jpg')) ? 'cover.jpg' : undefined);
 if (cover) spec.cover = cover;
 for (const line of sorted) {
   const midi = new Midi();
-  midi.header.setTempo(bpm);
+  midi.header.setTempo(tempos[0].bpm);
   midi.header.timeSignatures = [{ ticks: 0, timeSignature: [sig.numerator, sig.denominator], measures: 0 }];
   const track = midi.addTrack();
   track.name = line.name;
@@ -146,7 +186,8 @@ for (const line of sorted) {
 }
 writeFileSync(join(folder, 'song.json'), JSON.stringify(spec, null, 2) + '\n');
 const lengthBeats = endBeat - offset;
-console.log(`\n${spec.title}: ${bpm} bpm, ${sig.numerator}/${sig.denominator}, ${sorted.length} lines, project bars ${firstBar}-${endBar} (${Math.round((lengthBeats * 60) / bpm)} s)`);
+const seconds = tempos.reduce((acc, p, i) => acc + ((Math.min(tempos[i + 1]?.beat ?? lengthBeats, lengthBeats) - p.beat) * 60) / p.bpm, 0);
+console.log(`\n${spec.title}: ${spec.bpm} bpm, ${sig.numerator}/${sig.denominator}, ${sorted.length} lines, project bars ${firstBar}-${endBar} (${Math.round(seconds)} s)`);
 
 function titleCase(s) {
   return s.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());

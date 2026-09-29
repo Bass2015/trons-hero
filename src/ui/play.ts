@@ -36,11 +36,12 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
     updatePlayBtn();
   };
   const timeEl = h('span', { class: 'time' }, '00:00');
-  const totalEl = h('span', { class: 'time total' }, ` / ${mmss((song.lengthBeats * 60) / song.bpm / s.rate)}`);
+  const totalEl = h('span', { class: 'time total' }, ` / ${mmss(game.transport.secondsBetween(0, song.lengthBeats))}`);
   const progressFill = h('div', { class: 'progress-fill' });
   const comboNum = h('div', { class: 'combo-num' }, '0');
   const comboCard = h('div', { class: 'combo-card' }, comboNum, h('div', { class: 'combo-label' }, t.combo));
   const pointsEl = h('div', { class: 'points' }, '0');
+  const tempoVal = h('span', { class: 'val' }, `${Math.round(song.bpm * s.rate)} ${t.bpm}`);
 
   const topbar = h(
     'div',
@@ -65,9 +66,10 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   const refreshTime = () => {
     const tr = game.transport;
     const beat = Math.min(Math.max(tr.currentBeat(), 0), song.lengthBeats);
-    timeEl.textContent = mmss(beat * tr.secondsPerBeat);
-    totalEl.textContent = ` / ${mmss(song.lengthBeats * tr.secondsPerBeat)}`;
+    timeEl.textContent = mmss(tr.secondsBetween(0, beat));
+    totalEl.textContent = ` / ${mmss(tr.secondsBetween(0, song.lengthBeats))}`;
     progressFill.style.width = `${(beat / song.lengthBeats) * 100}%`;
+    tempoVal.textContent = `${Math.round(tr.currentBpm * tr.rate)} ${t.bpm}`;
   };
   const clock = setInterval(refreshTime, 200);
 
@@ -191,14 +193,13 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   const mixerBtn = h('button', { class: 'ctl-btn', onclick: () => mixer.classList.toggle('hidden') }, t.mixer);
 
   const bpmOf = (rate: number) => Math.round(song.bpm * rate);
-  const tempoVal = h('span', { class: 'val' }, `${bpmOf(s.rate)} ${t.bpm}`);
   const tempo = h('input', { type: 'range', min: String(bpmOf(0.4)), max: String(bpmOf(1.2)), step: '1', value: String(bpmOf(s.rate)) }) as HTMLInputElement;
   tempo.oninput = () => {
     const rate = Number(tempo.value) / song.bpm;
     game.setRate(rate);
     s.rate = rate;
     ctx.save();
-    tempoVal.textContent = `${tempo.value} ${t.bpm}`;
+    refreshTime();
   };
 
   // --- lifecycle

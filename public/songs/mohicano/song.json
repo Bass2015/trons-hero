@@ -1,6 +1,6 @@
 {
   "title": "Mohicano",
-  "bpm": 170.841949,
+  "bpm": 252,
   "beatsPerBar": 4,
   "firstBar": 4,
   "lines": [
@@ -45,6 +45,16 @@
       "name": "Ferro",
       "file": "ferro.mid",
       "role": "hidden"
+    }
+  ],
+  "tempos": [
+    {
+      "beat": 0,
+      "bpm": 252
+    },
+    {
+      "beat": 532,
+      "bpm": 280
     }
   ],
   "cover": "cover.jpg"
