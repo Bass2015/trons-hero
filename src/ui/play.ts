@@ -79,10 +79,9 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   // --- 3. highway with drag-to-scroll
   const canvas = h('canvas', { class: 'highway', 'aria-label': t.position });
   let scrubFrom = 0;
-  let wasPlaying = false;
   const scrubStart = () => {
-    wasPlaying = game.isPlaying;
-    if (wasPlaying) game.pause();
+    // dragging pauses; the song stays paused after release so several drags can home in on a spot
+    if (game.isPlaying) game.pause();
     scrubFrom = game.transport.currentBeat();
     updatePlayBtn();
   };
@@ -93,7 +92,6 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   };
   const scrubEnd = () => {
     game.seek(game.transport.currentBeat());
-    if (wasPlaying) game.resume();
     refreshScore();
     updatePlayBtn();
   };
