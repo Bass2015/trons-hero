@@ -139,8 +139,7 @@ img.thumb { object-fit: cover; }
 .scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%; background: #fff; border: 3px solid var(--orange); box-shadow: 0 0 8px rgba(255,159,28,0.6); }
 .scrub::-moz-range-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--orange) var(--pct), rgba(255,255,255,0.14) var(--pct)); }
 .scrub::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 3px solid var(--orange); }
-.pause-btn { width: 100%; padding: 14px; font-size: 20px; font-weight: 800; border-radius: 14px; background: var(--orange); color: #14100a; box-shadow: 0 0 18px rgba(255, 159, 28, 0.3); }
-.pause-btn.playing { background: var(--panel-2); color: var(--text); border: 2px solid var(--orange); box-shadow: none; }
+
 .col-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .combo-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 4px 12px; text-align: center; min-width: 64px; line-height: 1; }
 .combo-num { font-size: 24px; font-weight: 800; }
@@ -158,6 +157,14 @@ img.thumb { object-fit: cover; }
 .lane-icon { width: 26px; height: 26px; display: inline-block; flex: none; }
 .lane-icon svg { width: 100%; height: 100%; }
 .taps { display: flex; gap: 10px; height: 92px; }
+.taps .tap-btn { flex: 4; }
+.pause-btn { flex: 2; padding: 0; font-size: 26px; font-weight: 800; border-radius: 16px; background: var(--orange); color: #14100a; box-shadow: 0 0 18px rgba(255, 159, 28, 0.3); }
+.pause-btn.playing { background: var(--panel-2); color: var(--text); border: 2px solid var(--orange); box-shadow: none; }
+.icon-toggle { width: 42px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--border); border-radius: 10px; color: var(--muted); background: var(--panel); }
+.icon-toggle svg { width: 22px; height: 22px; }
+.icon-toggle.on { color: var(--orange); border-color: var(--orange); box-shadow: 0 0 10px rgba(255,159,28,0.35); }
+.highway { touch-action: none; cursor: grab; }
+.tempo-row { font-size: 14px; }
 .tap-btn { --c: var(--orange); flex: 1; font-size: 20px; font-weight: 800; border-radius: 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--c) 18%, var(--panel)), var(--panel)); border: 2px solid var(--c); color: var(--c); touch-action: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 0 14px color-mix(in srgb, var(--c) 25%, transparent); }
 .tap-btn kbd { font-size: 11px; color: var(--muted); font-family: inherit; }
 .tap-btn.pulse { animation: pulse 160ms ease-out; }

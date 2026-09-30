@@ -148,7 +148,7 @@ document.getElementById('app')!.append(
 );
 
 requestAnimationFrame(() => {
-  highway = new Highway(canvas, game, instruments, { visibleSeconds: 1.6, hideNotes: false, noteScale: START_SCALE });
+  highway = new Highway(canvas, game, instruments, { visibleBars: 2, hideNotes: false, noteScale: START_SCALE });
   highway.start();
   highway.targetLayout(100).forEach((g, i) => {
     labelEls[i]!.style.left = `${g.x0}%`;

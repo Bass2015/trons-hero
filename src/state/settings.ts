@@ -3,8 +3,8 @@ import type { Lang } from '../i18n/index';
 
 export interface Settings {
   offsetMs: number;
-  /** Seconds of song visible between the top of the highway and the strike line. */
-  visibleSeconds: number;
+  /** Bars of upcoming notes visible above the strike line. */
+  visibleBars: number;
   metronome: boolean;
   rate: number;
   mode: Mode;
@@ -18,7 +18,7 @@ const KEY = 'trons-hero.settings.v1';
 
 const DEFAULTS: Settings = {
   offsetMs: 0,
-  visibleSeconds: 1.6,
+  visibleBars: 2,
   metronome: true,
   rate: 1,
   mode: 'practicar',
@@ -29,7 +29,10 @@ const DEFAULTS: Settings = {
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) } : { ...DEFAULTS };
+    if (!raw) return { ...DEFAULTS };
+    const stored = JSON.parse(raw) as Partial<Settings> & { visibleSeconds?: number };
+    delete stored.visibleSeconds; // replaced by visibleBars
+    return { ...DEFAULTS, ...stored };
   } catch {
     return { ...DEFAULTS };
   }

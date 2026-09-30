@@ -91,12 +91,12 @@ export function settingsPanel(ctx: AppContext, rerender: () => void): HTMLElemen
   });
   queueMicrotask(() => observer.observe(document.body, { childList: true, subtree: true }));
 
-  // --- scroll speed
-  const speedVal = h('span', { class: 'val' }, `${s.visibleSeconds.toFixed(1)} s`);
-  const speed = h('input', { type: 'range', min: '0.8', max: '3', step: '0.1', value: String(s.visibleSeconds) }) as HTMLInputElement;
-  speed.oninput = () => {
-    s.visibleSeconds = Number(speed.value);
-    speedVal.textContent = `${s.visibleSeconds.toFixed(1)} s`;
+  // --- visible bars
+  const barsVal = h('span', { class: 'val' }, String(s.visibleBars));
+  const barsIn = h('input', { type: 'range', min: '1', max: '4', step: '0.5', value: String(s.visibleBars) }) as HTMLInputElement;
+  barsIn.oninput = () => {
+    s.visibleBars = Number(barsIn.value);
+    barsVal.textContent = String(s.visibleBars);
     ctx.save();
   };
 
@@ -113,7 +113,7 @@ export function settingsPanel(ctx: AppContext, rerender: () => void): HTMLElemen
       testBtn,
       h('p', { class: 'row' }, `${t.calibrationMeasured}: `, measured, h('span', { class: 'grow' }), useBtn),
     ),
-    h('section', {}, h('h3', { class: 'caps' }, t.scrollSpeed), h('label', { class: 'row' }, h('span', {}, t.fast), speed, h('span', {}, t.slow), speedVal)),
+    h('section', {}, h('h3', { class: 'caps' }, t.visibleBars), h('label', { class: 'row' }, barsIn, barsVal)),
   );
   return panel;
 }

@@ -14,8 +14,12 @@ interface Flash {
 }
 
 export interface HighwayOptions {
-  /** Seconds between the far end of the highway and the strike line. */
-  visibleSeconds: number;
+  /** Bars of upcoming notes between the strike line and the far end of the highway. */
+  visibleBars: number;
+  /** Drag-to-scroll callbacks: total beats moved since the drag started. */
+  onScrubStart?: () => void;
+  onScrub?: (deltaBeats: number) => void;
+  onScrubEnd?: () => void;
   /** Memory mode: do not draw notes. */
   hideNotes: boolean;
   /** Multiplier on the note pill size (1 = 70% of the lane width for the player's lane, 62% for others). */
@@ -50,6 +54,9 @@ export class Highway {
   private lines: Line[];
   private animFrom: LaneGeom[] | null = null;
   private animStart = 0;
+  /** Seconds covered by the visible window at the current position and rate; refreshed every frame. */
+  private visibleSeconds = 1.5;
+  private drag: { id: number; startY: number; moved: boolean } | null = null;
   opts: HighwayOptions;
 
   constructor(
@@ -62,12 +69,45 @@ export class Highway {
     this.lines = laneLines(game.song);
     this.ctx = canvas.getContext('2d')!;
     this.onResize = this.onResize.bind(this);
+    this.onPointerDown = this.onPointerDown.bind(this);
+    this.onPointerMove = this.onPointerMove.bind(this);
+    this.onPointerUp = this.onPointerUp.bind(this);
     this.resize();
     window.addEventListener('resize', this.onResize);
+    canvas.addEventListener('pointerdown', this.onPointerDown);
+    canvas.addEventListener('pointermove', this.onPointerMove);
+    canvas.addEventListener('pointerup', this.onPointerUp);
+    canvas.addEventListener('pointercancel', this.onPointerUp);
   }
 
   private onResize() {
     this.resize();
+  }
+
+  // --- drag to scroll: pulling the notes down advances the song, pushing up rewinds
+  private onPointerDown(e: PointerEvent) {
+    if (this.drag) return;
+    this.drag = { id: e.pointerId, startY: e.clientY, moved: false };
+    this.canvas.setPointerCapture(e.pointerId);
+  }
+
+  private onPointerMove(e: PointerEvent) {
+    if (!this.drag || e.pointerId !== this.drag.id) return;
+    const dy = e.clientY - this.drag.startY;
+    if (!this.drag.moved) {
+      if (Math.abs(dy) < 6) return; // a tap, not a drag
+      this.drag.moved = true;
+      this.opts.onScrubStart?.();
+    }
+    const visibleBeats = this.opts.visibleBars * this.game.song.beatsPerBar;
+    this.opts.onScrub?.((dy / (this.strikeY - this.horizonY)) * visibleBeats);
+  }
+
+  private onPointerUp(e: PointerEvent) {
+    if (!this.drag || e.pointerId !== this.drag.id) return;
+    const moved = this.drag.moved;
+    this.drag = null;
+    if (moved) this.opts.onScrubEnd?.();
   }
 
   private resize() {
@@ -96,6 +136,10 @@ export class Highway {
   stop() {
     cancelAnimationFrame(this.raf);
     window.removeEventListener('resize', this.onResize);
+    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
+    this.canvas.removeEventListener('pointermove', this.onPointerMove);
+    this.canvas.removeEventListener('pointerup', this.onPointerUp);
+    this.canvas.removeEventListener('pointercancel', this.onPointerUp);
   }
 
   // --- geometry -------------------------------------------------------------
@@ -154,7 +198,7 @@ export class Highway {
 
   /** Perspective scale for a depth in seconds ahead of the strike line. */
   private scale(d: number) {
-    const K = (1 / 0.28 - 1) / this.opts.visibleSeconds; // far end of the visible window is 28% wide
+    const K = (1 / 0.28 - 1) / this.visibleSeconds; // far end of the visible window is 28% wide
     return 1 / (1 + Math.max(d, -0.35) * K);
   }
 
@@ -175,7 +219,8 @@ export class Highway {
     const myLane = this.myLane;
     const horizonY = this.horizonY;
     const strikeY = this.strikeY;
-    const farBeat = tr.beatAfter(beatNow, this.opts.visibleSeconds * 1.4);
+    this.visibleSeconds = Math.max(0.3, tr.secondsBetween(beatNow, beatNow + this.opts.visibleBars * game.song.beatsPerBar));
+    const farBeat = tr.beatAfter(beatNow, this.visibleSeconds * 1.4);
     const nearBeat = tr.beatAfter(beatNow, -0.35);
 
     this.bg.draw(ctx, w, h, horizonY, this.dpr);
@@ -231,7 +276,7 @@ export class Highway {
     // beat / bar lines
     this.forVisibleBeats(nearBeat, farBeat, (beat, displayBeat) => {
       const d = tr.secondsBetween(beatNow, displayBeat);
-      if (d > this.opts.visibleSeconds * 1.4) return;
+      if (d > this.visibleSeconds * 1.4) return;
       const isBar = Math.abs(beat / game.song.beatsPerBar - Math.round(beat / game.song.beatsPerBar)) < 1e-6;
       const a = this.project(0, d);
       const b = this.project(w, d);
@@ -256,7 +301,7 @@ export class Highway {
       ctx.strokeStyle = '#ffd60a';
       for (const b of [tr.loopStartBeat, tr.loopEndBeat]) {
         const d = tr.secondsBetween(beatNow, b);
-        if (d < -0.35 || d > this.opts.visibleSeconds * 1.4) continue;
+        if (d < -0.35 || d > this.visibleSeconds * 1.4) continue;
         const a = this.project(0, d);
         const c = this.project(w, d);
         ctx.beginPath();
@@ -303,7 +348,7 @@ export class Highway {
         line.notes.forEach((n, ni) => {
           for (const displayBeat of this.wrapCandidates(n.beat, nearBeat, farBeat)) {
             const d = tr.secondsBetween(beatNow, displayBeat);
-            if (d > this.opts.visibleSeconds * 1.35) continue;
+            if (d > this.visibleSeconds * 1.35) continue;
             const p = this.project(l.cx, d);
             let alpha = state === 'muted' ? 0.35 : 1;
             let variant: 'normal' | 'mine' | 'miss' = mine ? 'mine' : 'normal';
@@ -319,7 +364,7 @@ export class Highway {
               }
             }
             // fade in at the far end
-            alpha *= Math.min(1, Math.max(0, (this.opts.visibleSeconds * 1.35 - d) / (this.opts.visibleSeconds * 0.35)));
+            alpha *= Math.min(1, Math.max(0, (this.visibleSeconds * 1.35 - d) / (this.visibleSeconds * 0.35)));
             if (alpha <= 0.01) continue;
             // dynamics: ghost notes small and faint, accents big and bright
             const dyn = n.velocity < 0.35 ? 0.72 : n.velocity > 0.85 ? 1.25 : 1;
