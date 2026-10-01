@@ -63,6 +63,11 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   );
 
   // --- 2b. section chips: tap to loop a section (jumps to its count-in), tap again to clear
+  // the strip never scrolls on its own while the user is touching it (a scroll under the finger eats the tap)
+  let stripBusyUntil = 0;
+  const markStripBusy = () => {
+    stripBusyUntil = performance.now() + 1500;
+  };
   const sectionChips = new Map<Section | null, HTMLButtonElement>();
   let looped: Section | null = null;
   let currentChip: HTMLButtonElement | null = null;
@@ -74,10 +79,10 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
     updatePlayBtn();
     refreshScore();
   };
-  const sectionStrip = song.sections.length
+  const sectionStrip: HTMLElement | null = song.sections.length
     ? h(
         'div',
-        { class: 'sections', role: 'tablist', 'aria-label': t.sections },
+        { class: 'sections', role: 'tablist', 'aria-label': t.sections, onpointerdown: markStripBusy, onscroll: markStripBusy },
         [null, ...song.sections].map((sec) => {
           const chip = h(
             'button',
@@ -93,17 +98,20 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   const refreshCurrentSection = () => {
     if (!song.sections.length) return;
     const beat = game.transport.currentBeat();
-    // innermost section containing the playhead: prefer inserts over parts
+    // the looped section wins while the playhead is inside it; otherwise the innermost section (inserts over parts)
     let cur: Section | null = null;
-    for (const sec of song.sections) if (beat >= sec.startBeat && beat < sec.endBeat && (!cur || sec.kind === 'insert' || cur.kind !== 'insert')) cur = sec;
+    if (looped && beat >= looped.startBeat && beat < looped.endBeat) cur = looped;
+    else for (const sec of song.sections) if (beat >= sec.startBeat && beat < sec.endBeat && (!cur || sec.kind === 'insert' || cur.kind !== 'insert')) cur = sec;
     const chip = cur ? sectionChips.get(cur) ?? null : null;
     if (chip === currentChip) return;
     currentChip?.classList.remove('current');
     currentChip = chip;
-    if (chip) {
-      chip.classList.add('current');
-      chip.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
-    }
+    if (!chip) return;
+    chip.classList.add('current');
+    if (performance.now() < stripBusyUntil || !sectionStrip) return;
+    const r = chip.getBoundingClientRect();
+    const sr = sectionStrip.getBoundingClientRect();
+    if (r.left < sr.left + 8 || r.right > sr.right - 8) chip.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   };
 
   const refreshScore = () => {

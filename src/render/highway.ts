@@ -314,6 +314,8 @@ export class Highway {
 
     // section gates: upright translucent planes at each section start, name on top
     for (const sec of game.song.sections) {
+      // while looping, only sections that start inside the loop exist for the player
+      if (tr.loop && (sec.startBeat < tr.loopStartBeat || sec.startBeat >= tr.loopEndBeat)) continue;
       for (const displayBeat of this.wrapCandidates(sec.startBeat, nearBeat, farBeat)) {
         const d = tr.secondsBetween(beatNow, displayBeat);
         if (d > this.visibleSeconds * 1.4) continue;
@@ -325,10 +327,11 @@ export class Highway {
         const b = this.project(w, d);
         const insert = sec.kind === 'insert';
         const col = insert ? '#22d3ee' : '#ff9f1c';
-        const top = Math.max(0, a.y - (strikeY - horizonY) * (insert ? 0.38 : 0.5) * a.s);
+        // tall plane: from the road up to almost the top of the canvas, shrinking with distance
+        const top = Math.max(h * 0.03, a.y - (a.y - h * 0.03) * (insert ? 0.78 : 0.92));
         const grad = ctx.createLinearGradient(0, top, 0, a.y);
-        grad.addColorStop(0, hexA(col, insert ? 0.34 : 0.5));
-        grad.addColorStop(0.55, hexA(col, insert ? 0.12 : 0.18));
+        grad.addColorStop(0, hexA(col, insert ? 0.3 : 0.42));
+        grad.addColorStop(0.5, hexA(col, insert ? 0.12 : 0.16));
         grad.addColorStop(1, hexA(col, 0));
         ctx.globalAlpha = alpha;
         ctx.fillStyle = grad;
@@ -348,17 +351,20 @@ export class Highway {
         ctx.moveTo(b.x, top);
         ctx.lineTo(b.x, a.y);
         ctx.stroke();
-        // name
-        const size = Math.round((insert ? 14 : 18) * a.s + (insert ? 5 : 6));
+        // name: to the left of the plane, outside the road's edge; falls back to the left margin when there is no room
+        const size = Math.round((insert ? 13 : 17) * a.s + (insert ? 6 : 8));
         ctx.font = `800 ${size}px ${FONT}`;
-        ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.lineWidth = 4;
         ctx.strokeStyle = 'rgba(0,0,0,0.65)';
         const label = sec.name.toUpperCase();
-        ctx.strokeText(label, (a.x + b.x) / 2, top + 4, b.x - a.x - 8);
+        const tw = ctx.measureText(label).width;
+        const outside = a.x - 8 >= tw + 8;
+        ctx.textAlign = outside ? 'right' : 'left';
+        const tx = outside ? a.x - 8 : 8;
+        ctx.strokeText(label, tx, top + 2);
         ctx.fillStyle = insert ? '#d9fbff' : '#fff3df';
-        ctx.fillText(label, (a.x + b.x) / 2, top + 4, b.x - a.x - 8);
+        ctx.fillText(label, tx, top + 2);
         ctx.textBaseline = 'alphabetic';
         ctx.globalAlpha = 1;
       }
