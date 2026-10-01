@@ -4,7 +4,7 @@ import { t } from '../i18n/index';
 import { bindTaps } from '../input/taps';
 import { Highway } from '../render/highway';
 import { instrumentFor } from '../song/instruments';
-import { laneLines, type Song } from '../song/types';
+import { laneLines, type Section, type Song } from '../song/types';
 import type { AppContext, PlayResume } from './app';
 import { bolt } from './brand';
 import { h, icon, mmss } from './index';
@@ -62,6 +62,50 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
     h('div', { class: 'col-right' }, comboCard, pointsEl),
   );
 
+  // --- 2b. section chips: tap to loop a section (jumps to its count-in), tap again to clear
+  const sectionChips = new Map<Section | null, HTMLButtonElement>();
+  let looped: Section | null = null;
+  let currentChip: HTMLButtonElement | null = null;
+  const barOf = (beat: number) => Math.floor(beat / song.beatsPerBar) + song.firstBar;
+  const chooseSection = (sec: Section | null) => {
+    looped = sec && looped === sec ? null : sec;
+    game.loopSection(looped);
+    sectionChips.forEach((chip, key) => chip.classList.toggle('active', key === looped || (looped === null && key === null)));
+    updatePlayBtn();
+    refreshScore();
+  };
+  const sectionStrip = song.sections.length
+    ? h(
+        'div',
+        { class: 'sections', role: 'tablist', 'aria-label': t.sections },
+        [null, ...song.sections].map((sec) => {
+          const chip = h(
+            'button',
+            { class: `chip-sec ${sec ? sec.kind : 'all active'}`, onclick: () => chooseSection(sec) },
+            h('span', { class: 'sec-name' }, sec ? sec.name : t.wholeSong),
+            sec ? h('span', { class: 'sec-bar' }, String(barOf(sec.startBeat))) : null,
+          );
+          sectionChips.set(sec, chip);
+          return chip;
+        }),
+      )
+    : null;
+  const refreshCurrentSection = () => {
+    if (!song.sections.length) return;
+    const beat = game.transport.currentBeat();
+    // innermost section containing the playhead: prefer inserts over parts
+    let cur: Section | null = null;
+    for (const sec of song.sections) if (beat >= sec.startBeat && beat < sec.endBeat && (!cur || sec.kind === 'insert' || cur.kind !== 'insert')) cur = sec;
+    const chip = cur ? sectionChips.get(cur) ?? null : null;
+    if (chip === currentChip) return;
+    currentChip?.classList.remove('current');
+    currentChip = chip;
+    if (chip) {
+      chip.classList.add('current');
+      chip.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+    }
+  };
+
   const refreshScore = () => {
     comboNum.textContent = String(game.score.streak);
     pointsEl.textContent = String(game.score.points);
@@ -73,6 +117,7 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
     timeEl.textContent = mmss(tr.secondsBetween(0, beat));
     totalEl.textContent = ` / ${mmss(tr.secondsBetween(0, song.lengthBeats))}`;
     tempoVal.textContent = `${Math.round(tr.currentBpm * tr.rate)} ${t.bpm}`;
+    refreshCurrentSection();
   };
   const clock = setInterval(refreshTime, 200);
 
@@ -204,6 +249,7 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
     { class: 'screen play' },
     modeBar,
     header,
+    sectionStrip,
     h('div', { class: 'highway-wrap' }, canvas),
     labels,
     h('div', { class: 'taps' }, left, playBtn, right),

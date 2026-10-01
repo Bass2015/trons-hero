@@ -50,6 +50,7 @@ export async function buildSong(
     lines,
     firstBar: spec.firstBar ?? 1,
     tempos,
+    sections: [...(spec.sections ?? [])].sort((a, b) => a.startBeat - b.startBeat),
     coverUrl: spec.cover ? baseUrl + spec.cover : undefined,
     baseUrl,
   };

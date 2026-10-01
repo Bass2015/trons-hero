@@ -50,6 +50,19 @@ Para cambiar el título, el rango o el mapeo, crea `import.json` en la carpeta:
 
 Requiere Node 23.6 o superior (el script importa código TypeScript directamente).
 
+### Secciones con locators
+
+Los **locators** del arrangement se importan como secciones (`sections` en `song.json`), que la
+app muestra como "puertas" en el track y permite elegir para practicar en bucle:
+
+- Un locator con nombre abre una **parte** (INTRO, TALL 01, FINAL…) que dura hasta el siguiente
+  locator de parte.
+- Un par `NOMBRE` … `/NOMBRE` define un **inserto** dentro de la parte (TAKITE 4 … /TAKITE 4).
+  Al cerrarse, la parte continúa. Si un nombre se repite, cada cierre empareja con la apertura
+  anterior más cercana.
+- Se ignoran `Start` y los nombres que empiezan por `_`. Para ignorar otros, añade
+  `"ignoreLocators": ["silenci raro"]` a `import.json`.
+
 ## Camino manual: un clip MIDI por instrumento
 
 Cada canción es una carpeta dentro de `public/songs/` con un `song.json` y uno o más

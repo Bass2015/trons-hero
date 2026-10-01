@@ -312,6 +312,58 @@ export class Highway {
       ctx.setLineDash([]);
     }
 
+    // section gates: upright translucent planes at each section start, name on top
+    for (const sec of game.song.sections) {
+      for (const displayBeat of this.wrapCandidates(sec.startBeat, nearBeat, farBeat)) {
+        const d = tr.secondsBetween(beatNow, displayBeat);
+        if (d > this.visibleSeconds * 1.4) continue;
+        const approach = Math.min(1, Math.max(0, (this.visibleSeconds * 1.4 - d) / (this.visibleSeconds * 0.45)));
+        const leaving = d < 0 ? Math.max(0, 1 + d / 0.3) : 1;
+        const alpha = approach * leaving;
+        if (alpha <= 0.01) continue;
+        const a = this.project(0, d);
+        const b = this.project(w, d);
+        const insert = sec.kind === 'insert';
+        const col = insert ? '#22d3ee' : '#ff9f1c';
+        const top = Math.max(0, a.y - (strikeY - horizonY) * (insert ? 0.38 : 0.5) * a.s);
+        const grad = ctx.createLinearGradient(0, top, 0, a.y);
+        grad.addColorStop(0, hexA(col, insert ? 0.34 : 0.5));
+        grad.addColorStop(0.55, hexA(col, insert ? 0.12 : 0.18));
+        grad.addColorStop(1, hexA(col, 0));
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = grad;
+        ctx.fillRect(a.x, top, b.x - a.x, a.y - top);
+        // edges: bright top, faint sides
+        ctx.strokeStyle = hexA(col, 0.95);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(a.x, top);
+        ctx.lineTo(b.x, top);
+        ctx.stroke();
+        ctx.strokeStyle = hexA(col, 0.35);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(a.x, top);
+        ctx.lineTo(a.x, a.y);
+        ctx.moveTo(b.x, top);
+        ctx.lineTo(b.x, a.y);
+        ctx.stroke();
+        // name
+        const size = Math.round((insert ? 14 : 18) * a.s + (insert ? 5 : 6));
+        ctx.font = `800 ${size}px ${FONT}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(0,0,0,0.65)';
+        const label = sec.name.toUpperCase();
+        ctx.strokeText(label, (a.x + b.x) / 2, top + 4, b.x - a.x - 8);
+        ctx.fillStyle = insert ? '#d9fbff' : '#fff3df';
+        ctx.fillText(label, (a.x + b.x) / 2, top + 4, b.x - a.x - 8);
+        ctx.textBaseline = 'alphabetic';
+        ctx.globalAlpha = 1;
+      }
+    }
+
     // strike bar
     const bar = ctx.createLinearGradient(0, 0, w, 0);
     bar.addColorStop(0, '#22d3ee');

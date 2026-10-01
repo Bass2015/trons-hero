@@ -34,6 +34,13 @@ const song: Song = {
   beatsPerBar: BPB,
   lengthBeats: BARS * BPB,
   firstBar: 1,
+  sections: [
+    { name: 'Intro', startBeat: 0, endBeat: 8, kind: 'part' },
+    { name: 'Takite 4', startBeat: 4, endBeat: 8, kind: 'insert' },
+    { name: 'Tall 01', startBeat: 8, endBeat: 24, kind: 'part' },
+    { name: 'Swing', startBeat: 16, endBeat: 20, kind: 'insert' },
+    { name: 'Final', startBeat: 24, endBeat: 32, kind: 'part' },
+  ],
   baseUrl: '',
   lines: [
     pattern('surdo', [0, 2]),

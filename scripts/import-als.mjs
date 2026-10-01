@@ -17,6 +17,7 @@ import { join, basename } from 'node:path';
 import { createRequire } from 'node:module';
 import { XMLParser } from 'fast-xml-parser';
 import { unrollClip, decodeTimeSignature } from '../src/import/unroll.ts';
+import { buildSections } from '../src/import/sections.ts';
 import { INSTRUMENTS } from '../src/song/instruments.ts';
 
 const require = createRequire(import.meta.url);
@@ -35,7 +36,7 @@ if (!alsFile) {
 const overrides = existsSync(join(folder, 'import.json')) ? JSON.parse(readFileSync(join(folder, 'import.json'), 'utf8')) : {};
 
 // --- parse -----------------------------------------------------------------------
-const LIST_TAGS = new Set(['MidiTrack', 'AudioTrack', 'GroupTrack', 'MidiClip', 'KeyTrack', 'MidiNoteEvent', 'AutomationEnvelope', 'FloatEvent']);
+const LIST_TAGS = new Set(['MidiTrack', 'AudioTrack', 'GroupTrack', 'MidiClip', 'KeyTrack', 'MidiNoteEvent', 'AutomationEnvelope', 'FloatEvent', 'Locator']);
 const xml = gunzipSync(readFileSync(join(folder, alsFile))).toString('utf8');
 const doc = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '', isArray: (name) => LIST_TAGS.has(name), parseAttributeValue: false }).parse(xml);
 const liveSet = doc.Ableton.LiveSet;
@@ -167,6 +168,15 @@ const startIdx = Math.max(0, shifted.findLastIndex((p) => p.beat <= 0));
 const tempos = [{ beat: 0, bpm: shifted[startIdx].bpm }, ...shifted.slice(startIdx + 1)];
 const spec = { title: overrides.title ?? titleCase(basename(alsFile, '.als')), bpm: tempos[0].bpm, beatsPerBar, firstBar, lines: [] };
 if (tempos.length > 1) spec.tempos = tempos;
+// sections from arrangement locators
+const locators = (liveSet.Locators?.Locators?.Locator ?? []).map((l) => ({ time: Number(val(l.Time)), name: String(val(l.Name) ?? '') }));
+const ignoreList = overrides.ignoreLocators;
+const ignore = Array.isArray(ignoreList) && ignoreList.length ? new RegExp(`^(${ignoreList.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')}|_)`, 'i') : undefined;
+const sections = buildSections(locators, { startBeat: offset, endBeat, ignore });
+if (sections.length) {
+  spec.sections = sections;
+  console.log(`  sections (${sections.length}): ${sections.map((s) => `${s.kind === 'insert' ? '  ↳ ' : ''}${s.name} [${Math.floor(s.startBeat / beatsPerBar) + firstBar}]`).join(', ')}`);
+}
 if (tempoEvents.length) console.log(`  tempo automation: ${tempos.map((p) => `${p.bpm} bpm @ bar ${Math.floor(p.beat / beatsPerBar) + firstBar}`).join(', ')}`);
 const cover = overrides.cover ?? (existsSync(join(folder, 'cover.jpg')) ? 'cover.jpg' : undefined);
 if (cover) spec.cover = cover;

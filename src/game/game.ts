@@ -1,5 +1,5 @@
 import type { AudioEngine } from '../audio/engine';
-import type { Line, Song } from '../song/types';
+import type { Line, Section, Song } from '../song/types';
 import { Judge, type TapResult, type Verdict } from './judge';
 import { presetStates, type LineState, type Mode } from './modes';
 import { Scheduler } from './scheduler';
@@ -133,6 +133,11 @@ export class Game {
       this.lastPassBeat = this.transport.currentBeat();
       this.scheduler.start();
     }
+  }
+
+  /** Loops a section (jumping to its count-in), or clears the loop and keeps going. */
+  loopSection(section: Section | null) {
+    this.setLoop(section ? { startBeat: section.startBeat, endBeat: section.endBeat } : null);
   }
 
   setMode(mode: Mode) {

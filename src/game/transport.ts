@@ -1,10 +1,10 @@
 import { TempoMap } from './tempoMap';
 
 export interface LoopRange {
-  /** First bar of the loop, 0-based, inclusive. */
-  startBar: number;
-  /** Bar after the last looped bar, exclusive. */
-  endBar: number;
+  /** First beat of the loop, inclusive. */
+  startBeat: number;
+  /** Beat where the loop wraps, exclusive. */
+  endBeat: number;
 }
 
 export type TransportState = 'stopped' | 'playing' | 'paused';
@@ -76,11 +76,11 @@ export class Transport {
   }
 
   get loopStartBeat() {
-    return this.loop ? this.loop.startBar * this.beatsPerBar : 0;
+    return this.loop ? this.loop.startBeat : 0;
   }
 
   get loopEndBeat() {
-    return this.loop ? this.loop.endBar * this.beatsPerBar : this.lengthBeats;
+    return this.loop ? this.loop.endBeat : this.lengthBeats;
   }
 
   /** Where playback begins: the count-in before the song or before the loop. */

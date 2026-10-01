@@ -29,6 +29,14 @@ export interface LineSpec {
   role?: LineRole;
 }
 
+/** A named part of the song. Inserts are sub-sections nested inside parts. */
+export interface Section {
+  name: string;
+  startBeat: number;
+  endBeat: number;
+  kind: 'part' | 'insert';
+}
+
 export interface SongSpec {
   title: string;
   /** Overrides the tempo found in the MIDI file. */
@@ -41,6 +49,7 @@ export interface SongSpec {
   tempos?: { beat: number; bpm: number }[];
   /** Cover image, relative to the song folder. */
   cover?: string;
+  sections?: Section[];
   lines: LineSpec[];
 }
 
@@ -71,6 +80,8 @@ export interface Song {
   firstBar: number;
   /** Tempo changes, if the song has any; `bpm` is the initial tempo. */
   tempos?: { beat: number; bpm: number }[];
+  /** Named sections sorted by start; empty when the project has no locators. */
+  sections: Section[];
   /** Absolute URL of the cover image, if any. */
   coverUrl?: string;
   /** Base URL of the song folder, used to fetch samples. */

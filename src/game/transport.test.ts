@@ -48,7 +48,7 @@ describe('Transport', () => {
 
   it('wraps a loop exactly at the loop end', () => {
     const { tr, advance } = make();
-    tr.setLoop({ startBar: 1, endBar: 2 }); // beats 4..8
+    tr.setLoop({ startBeat: 4, endBeat: 8 });
     expect(tr.startBeat).toBe(0); // count-in bar before the loop
     tr.play(4);
     advance(2.25); // 4.5 beats later => beat 8.5 => wrapped to 4.5

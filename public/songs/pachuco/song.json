@@ -109,5 +109,229 @@
       "bpm": 136
     }
   ],
+  "sections": [
+    {
+      "name": "INTRO",
+      "startBeat": 4,
+      "endBeat": 52,
+      "kind": "part"
+    },
+    {
+      "name": "TAKITE 9",
+      "startBeat": 25,
+      "endBeat": 34,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 01",
+      "startBeat": 52,
+      "endBeat": 72,
+      "kind": "part"
+    },
+    {
+      "name": "TAKITE 4",
+      "startBeat": 60,
+      "endBeat": 64,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 02 (entra al 3)",
+      "startBeat": 72,
+      "endBeat": 94,
+      "kind": "part"
+    },
+    {
+      "name": "TAKITE 4",
+      "startBeat": 78,
+      "endBeat": 82,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 03 (subs)",
+      "startBeat": 94,
+      "endBeat": 118,
+      "kind": "part"
+    },
+    {
+      "name": "TAKITE 4 (caixa)",
+      "startBeat": 110,
+      "endBeat": 114,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 04",
+      "startBeat": 118,
+      "endBeat": 134,
+      "kind": "part"
+    },
+    {
+      "name": "TAKITE 4 (rocar)",
+      "startBeat": 122,
+      "endBeat": 126,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 05 (entra al 3)",
+      "startBeat": 134,
+      "endBeat": 150,
+      "kind": "part"
+    },
+    {
+      "name": "TAKITE 4 (replana)",
+      "startBeat": 138,
+      "endBeat": 146,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 06 (entra al 3)",
+      "startBeat": 150,
+      "endBeat": 166,
+      "kind": "part"
+    },
+    {
+      "name": "TAKITE 4",
+      "startBeat": 154,
+      "endBeat": 158,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 07",
+      "startBeat": 166,
+      "endBeat": 192,
+      "kind": "part"
+    },
+    {
+      "name": "SWING",
+      "startBeat": 180,
+      "endBeat": 184,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 08 (entra al 3)",
+      "startBeat": 192,
+      "endBeat": 214,
+      "kind": "part"
+    },
+    {
+      "name": "SWING (caixa)",
+      "startBeat": 198,
+      "endBeat": 202,
+      "kind": "insert"
+    },
+    {
+      "name": "silenci raro",
+      "startBeat": 214,
+      "endBeat": 230,
+      "kind": "part"
+    },
+    {
+      "name": "TALL 09",
+      "startBeat": 230,
+      "endBeat": 238,
+      "kind": "part"
+    },
+    {
+      "name": "intro HEY PACHUCO",
+      "startBeat": 238,
+      "endBeat": 276,
+      "kind": "part"
+    },
+    {
+      "name": "PATXUCO",
+      "startBeat": 262,
+      "endBeat": 270,
+      "kind": "insert"
+    },
+    {
+      "name": "variació",
+      "startBeat": 276,
+      "endBeat": 294,
+      "kind": "part"
+    },
+    {
+      "name": "TALL 10",
+      "startBeat": 294,
+      "endBeat": 382,
+      "kind": "part"
+    },
+    {
+      "name": "KINKI",
+      "startBeat": 350,
+      "endBeat": 358,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 11",
+      "startBeat": 382,
+      "endBeat": 422,
+      "kind": "part"
+    },
+    {
+      "name": "KINKI 2",
+      "startBeat": 390,
+      "endBeat": 398,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 12",
+      "startBeat": 422,
+      "endBeat": 426,
+      "kind": "part"
+    },
+    {
+      "name": "silenci raro --> KINKI 2",
+      "startBeat": 426,
+      "endBeat": 490,
+      "kind": "part"
+    },
+    {
+      "name": "TALL 13",
+      "startBeat": 490,
+      "endBeat": 522,
+      "kind": "part"
+    },
+    {
+      "name": "SEXY",
+      "startBeat": 506,
+      "endBeat": 510,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 14 (e, e)",
+      "startBeat": 522,
+      "endBeat": 558,
+      "kind": "part"
+    },
+    {
+      "name": "intro KINKI",
+      "startBeat": 558,
+      "endBeat": 590,
+      "kind": "part"
+    },
+    {
+      "name": "KINKI",
+      "startBeat": 562,
+      "endBeat": 570,
+      "kind": "insert"
+    },
+    {
+      "name": "KINKI + TAKITE",
+      "startBeat": 578,
+      "endBeat": 586,
+      "kind": "insert"
+    },
+    {
+      "name": "TALL 15 (casi igual que el TALL 06)",
+      "startBeat": 590,
+      "endBeat": 606,
+      "kind": "part"
+    },
+    {
+      "name": "FINAL (entra al 3)",
+      "startBeat": 606,
+      "endBeat": 612,
+      "kind": "part"
+    }
+  ],
   "cover": "cover.jpg"
 }

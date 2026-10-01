@@ -29,6 +29,8 @@ export const ca = {
   resume: 'Continuar',
   restart: 'Reiniciar',
   loop: 'Bucle',
+  wholeSong: 'Tota la cançó',
+  sections: 'Seccions',
   loopFrom: 'del compàs',
   loopTo: 'al',
   mixer: 'Mescla',

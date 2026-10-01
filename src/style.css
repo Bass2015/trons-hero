@@ -127,6 +127,18 @@ img.thumb { object-fit: cover; }
 .switch input:checked + .knob { background: var(--orange); }
 .switch input:checked + .knob::after { transform: translateX(20px); }
 
+/* sections strip */
+.sections { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; flex: none; }
+.sections::-webkit-scrollbar { display: none; }
+.chip-sec { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 12px; border-radius: 999px; border: 2px solid rgba(255,159,28,0.55); background: var(--panel); color: var(--text); font-family: var(--display); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 800; font-size: 13px; line-height: 1; position: relative; }
+.chip-sec.insert { border-color: rgba(34,211,238,0.5); font-size: 12px; padding: 5px 10px; font-weight: 700; }
+.chip-sec.all { border-color: var(--border); color: var(--muted); }
+.chip-sec .sec-bar { font-size: 10px; color: var(--muted); font-weight: 700; }
+.chip-sec.active { background: var(--orange); border-color: var(--orange); color: #14100a; box-shadow: 0 0 12px rgba(255,159,28,0.4); }
+.chip-sec.insert.active { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 12px rgba(34,211,238,0.4); }
+.chip-sec.active .sec-bar { color: rgba(20,16,10,0.7); }
+.chip-sec.current::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px #fff; }
+
 /* play */
 .screen.play { overflow: hidden; gap: 8px; }
 .playbar { display: flex; align-items: center; gap: 8px; }

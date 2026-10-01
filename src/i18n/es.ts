@@ -31,6 +31,8 @@ export const es: Dict = {
   resume: 'Seguir',
   restart: 'Reiniciar',
   loop: 'Bucle',
+  wholeSong: 'Toda la canción',
+  sections: 'Secciones',
   loopFrom: 'del compás',
   loopTo: 'al',
   mixer: 'Mezcla',
