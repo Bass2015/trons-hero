@@ -160,7 +160,10 @@ img.thumb { object-fit: cover; }
 .points { font-family: var(--display); font-size: 12px; color: var(--muted); }
 .highway-wrap { flex: 1; min-height: 200px; position: relative; border-radius: 16px; overflow: hidden; background: #070a12; border: 1px solid var(--border); }
 .highway { width: 100%; height: 100%; display: block; }
-.lane-labels { position: relative; height: 58px; }
+.lane-labels { position: relative; height: 58px; flex: none; touch-action: none; }
+.lane-label.extra { display: none; }
+.play.mixing .lane-label.extra { display: flex; }
+.play.mixing .highway-wrap { min-height: 120px; }
 .lane-label { position: absolute; top: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-weight: 800; font-size: 12px; opacity: 0.7; min-width: 0; padding: 0; background: transparent; border-radius: 12px; transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s, transform 0.3s; }
 .lane-label:active { background: rgba(255,255,255,0.06); }
 .lane-label.mine { opacity: 1; text-shadow: 0 0 10px currentColor; transform: scale(1.12); }
@@ -187,10 +190,17 @@ img.thumb { object-fit: cover; }
 .ctl-btn { padding: 9px 12px; font-weight: 700; font-size: 13px; border: 1px solid var(--border); }
 .ctl-btn.ghost { background: transparent; color: var(--muted); }
 .ctl-btn.big { font-size: 16px; padding: 14px 18px; }
-.mixer { display: flex; flex-wrap: wrap; gap: 8px; }
-.mix-btn { --c: #fff; border: 2px solid var(--c); background: transparent; opacity: 0.5; display: inline-flex; gap: 6px; align-items: center; color: var(--c); font-weight: 700; padding: 6px 10px; }
-.mix-btn .lane-icon { width: 20px; height: 20px; }
-.mix-btn.on { opacity: 1; background: color-mix(in srgb, var(--c) 15%, var(--panel)); }
+/* mixer: slides open under the lane labels; one vertical fader per column, aligned with its label */
+.mixer { position: relative; flex: none; height: 0; margin-top: -8px; overflow: hidden; transition: height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), margin-top 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.mixer.open { height: 150px; margin-top: 0; }
+.fader { --c: #fff; --v: 1; position: absolute; top: 6px; bottom: 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--c); touch-action: none; cursor: ns-resize; transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.fader-track { position: relative; flex: 1; width: 16px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--border); overflow: hidden; }
+.fader-fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--v) * 100%); background: linear-gradient(180deg, color-mix(in srgb, var(--c) 70%, #fff), var(--c)); box-shadow: 0 0 12px color-mix(in srgb, var(--c) 60%, transparent); }
+.fader-fill::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: #fff; opacity: 0.9; }
+.fader-val { font-family: var(--display); font-weight: 700; font-size: 12px; color: var(--muted); line-height: 1; }
+.fader.mine .fader-track { width: 22px; box-shadow: 0 0 10px color-mix(in srgb, var(--c) 35%, transparent); }
+.fader.off .fader-track { border-style: dashed; }
+.fader.off .fader-val { color: var(--magenta); }
 
 /* results */
 .results-hero { display: flex; align-items: center; gap: 16px; padding: 12px 4px; }

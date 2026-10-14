@@ -36,6 +36,8 @@ export const es: Dict = {
   loopFrom: 'del compás',
   loopTo: 'al',
   mixer: 'Mezcla',
+  extras: 'Extras',
+  mixerHint: 'Arrastra hacia arriba sobre los instrumentos para abrir la mezcla',
   left: 'Izq',
   right: 'Der',
   keysHint: 'Teclado: V y N',

@@ -4,6 +4,7 @@ import { t } from '../i18n/index';
 import { bindTaps } from '../input/taps';
 import { Highway } from '../render/highway';
 import { instrumentFor } from '../song/instruments';
+import { EXTRAS_KEY, mixColumns, volumeOf } from '../song/mix';
 import { laneLines, type Section, type Song } from '../song/types';
 import type { AppContext, PlayResume } from './app';
 import { bolt } from './brand';
@@ -23,6 +24,14 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
   const myLane = () => lanes.findIndex((l) => l.id === game.myLineId);
   const mine = () => instruments[myLane()]!;
   let highway: Highway | null = null;
+
+  // --- 0. mixer levels: global per instrument, applied on top of the mode's mutes
+  const columns = mixColumns(song, t.extras);
+  const extrasCol = columns.find((c) => c.key === EXTRAS_KEY) ?? null;
+  const applyVolumes = () => {
+    for (const col of columns) for (const id of col.lineIds) ctx.engine.setLineVolume(id, volumeOf(s, col.key));
+  };
+  applyVolumes();
 
   // --- 1. mode row
   const modeBar = h('div', { class: 'segmented' });
@@ -149,24 +158,149 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
     updatePlayBtn();
   };
 
-  // --- 4. tappable lane labels
+  // --- 4. tappable lane labels; drag up on the strip to open the mixer, drag down to close it
   const labelEls = instruments.map((inst, i) => {
     const el = h('button', { class: 'lane-label', onclick: () => switchLine(lanes[i]!.id) }, icon(inst.icon, 'lane-icon'), h('span', {}, inst.name));
     el.style.color = inst.color;
     return el;
   });
-  const labels = h('div', { class: 'lane-labels' }, labelEls);
-  const layoutLabels = () => {
+  // the extras column only exists while the mixer is open: it has no lane, so it gets a label of its own
+  const extrasLabel = extrasCol ? h('div', { class: 'lane-label extra' }, icon(extrasCol.icon, 'lane-icon'), h('span', {}, extrasCol.name)) : null;
+  if (extrasLabel && extrasCol) extrasLabel.style.color = extrasCol.color;
+
+  let mixerOpen = false;
+  let stripDrag: { id: number; startY: number; dragged: boolean } | null = null;
+  let swallowClick = false;
+  const STRIP_DRAG_PX = 12;
+  const labels = h(
+    'div',
+    {
+      class: 'lane-labels',
+      title: t.mixerHint,
+      onpointerdown: (e: PointerEvent) => {
+        swallowClick = false;
+        stripDrag = { id: e.pointerId, startY: e.clientY, dragged: false };
+        // capture on the pressed label (not the strip) so a plain tap still clicks the button
+        (e.target as Element).setPointerCapture?.(e.pointerId);
+      },
+      onpointermove: (e: PointerEvent) => {
+        if (!stripDrag || e.pointerId !== stripDrag.id) return;
+        const dy = e.clientY - stripDrag.startY;
+        if (Math.abs(dy) < STRIP_DRAG_PX) return;
+        stripDrag.dragged = true;
+        if (dy < 0) openMixer();
+        else closeMixer();
+      },
+      onpointerup: (e: PointerEvent) => {
+        if (!stripDrag || e.pointerId !== stripDrag.id) return;
+        swallowClick = stripDrag.dragged;
+        stripDrag = null;
+      },
+      onpointercancel: () => {
+        stripDrag = null;
+      },
+    },
+    labelEls,
+    extrasLabel,
+  );
+  // a drag must not also switch lines: eat the click that follows it
+  labels.addEventListener(
+    'click',
+    (e) => {
+      if (!swallowClick) return;
+      swallowClick = false;
+      e.stopPropagation();
+      e.preventDefault();
+    },
+    true,
+  );
+
+  /** Column boxes in % of the strip width: lanes follow the highway; the extras column, when shown, takes a slot at the right. */
+  const columnGeom = (): { x0: number; w: number }[] | null => {
     const layout = highway?.targetLayout(100);
+    if (!layout) return null;
+    const n = lanes.length;
+    const slots = n + (mixerOpen && extrasCol ? 1 : 0);
+    const k = n / slots;
+    const out = layout.map((g) => ({ x0: g.x0 * k, w: g.w * k }));
+    if (slots > n) out.push({ x0: 100 * k, w: 100 / slots });
+    return out;
+  };
+  const place = (el: HTMLElement, g: { x0: number; w: number } | undefined) => {
+    if (!g) return;
+    el.style.left = `${g.x0}%`;
+    el.style.width = `${g.w}%`;
+  };
+  const layoutLabels = () => {
+    const geom = columnGeom();
     labelEls.forEach((el, i) => {
-      const g = layout?.[i];
-      if (g) {
-        el.style.left = `${g.x0}%`;
-        el.style.width = `${g.w}%`;
-      }
+      place(el, geom?.[i]);
+      el.classList.toggle('mine', i === myLane());
+    });
+    if (extrasLabel) place(extrasLabel, geom?.[lanes.length]);
+    faderEls.forEach((el, i) => {
+      place(el, geom?.[i]);
       el.classList.toggle('mine', i === myLane());
     });
   };
+
+  // --- 4b. mixer: one vertical fader per column, aligned under its label
+  const faderEls = columns.map((col) => {
+    const fill = h('div', { class: 'fader-fill' });
+    const val = h('span', { class: 'fader-val' });
+    const track = h('div', { class: 'fader-track' }, fill);
+    const el = h('div', { class: 'fader', role: 'slider', 'aria-label': col.name, 'aria-valuemin': '0', 'aria-valuemax': '100' }, track, val);
+    el.style.setProperty('--c', col.color);
+    const paint = () => {
+      const v = volumeOf(s, col.key);
+      el.style.setProperty('--v', String(v));
+      el.setAttribute('aria-valuenow', String(Math.round(v * 100)));
+      el.classList.toggle('off', v === 0);
+      val.textContent = String(Math.round(v * 100));
+    };
+    paint();
+    let drag: number | null = null;
+    const setFromY = (clientY: number) => {
+      const r = track.getBoundingClientRect();
+      if (!r.height) return;
+      const v = Math.min(1, Math.max(0, 1 - (clientY - r.top) / r.height));
+      s.volumes[col.key] = Math.round(v * 100) / 100;
+      applyVolumes();
+      paint();
+    };
+    el.addEventListener('pointerdown', (e) => {
+      if (drag !== null) return;
+      drag = e.pointerId;
+      el.setPointerCapture(e.pointerId);
+      setFromY(e.clientY);
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (e.pointerId === drag) setFromY(e.clientY);
+    });
+    const release = (e: PointerEvent) => {
+      if (e.pointerId !== drag) return;
+      drag = null;
+      ctx.save();
+    };
+    el.addEventListener('pointerup', release);
+    el.addEventListener('pointercancel', release);
+    return el;
+  });
+  const mixPanel = h('div', { class: 'mixer', role: 'group', 'aria-label': t.mixer }, faderEls);
+  function openMixer() {
+    if (mixerOpen) return;
+    mixerOpen = true;
+    screen.classList.add('mixing');
+    mixPanel.classList.add('open');
+    layoutLabels();
+  }
+  function closeMixer() {
+    if (!mixerOpen) return;
+    mixerOpen = false;
+    screen.classList.remove('mixing');
+    mixPanel.classList.remove('open');
+    layoutLabels();
+  }
 
   // --- 5. pads with the pause button in the middle
   const left = h('button', { class: 'tap-btn left' }, h('span', {}, t.left), h('kbd', {}, 'V'));
@@ -260,6 +394,7 @@ export function playScreen(ctx: AppContext, song: Song, lineId: string, resume?:
     sectionStrip,
     h('div', { class: 'highway-wrap' }, canvas),
     labels,
+    mixPanel,
     h('div', { class: 'taps' }, left, playBtn, right),
     h('div', { class: 'row tempo-row' }, h('span', {}, t.tempo), tempo, tempoVal, metroBtn),
   );

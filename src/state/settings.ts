@@ -12,6 +12,8 @@ export interface Settings {
   lang?: Lang;
   lastSong?: string;
   lastLine: Record<string, string>;
+  /** Mixer levels 0..1 per instrument id (surdo, caixa…) or `extras`; unset means 1. Global across songs. */
+  volumes: Record<string, number>;
 }
 
 const KEY = 'trons-hero.settings.v1';
@@ -24,6 +26,7 @@ const DEFAULTS: Settings = {
   mode: 'practicar',
   hideNotes: false,
   lastLine: {},
+  volumes: {},
 };
 
 export function loadSettings(): Settings {

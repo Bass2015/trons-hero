@@ -57,6 +57,8 @@ export class Highway {
   /** Seconds covered by the visible window at the current position and rate; refreshed every frame. */
   private visibleSeconds = 1.5;
   private drag: { id: number; startY: number; moved: boolean } | null = null;
+  /** Follows the canvas's own box, which changes when the mixer opens below it. */
+  private observer: ResizeObserver | null = null;
   opts: HighwayOptions;
 
   constructor(
@@ -74,6 +76,10 @@ export class Highway {
     this.onPointerUp = this.onPointerUp.bind(this);
     this.resize();
     window.addEventListener('resize', this.onResize);
+    if (typeof ResizeObserver !== 'undefined') {
+      this.observer = new ResizeObserver(this.onResize);
+      this.observer.observe(canvas);
+    }
     canvas.addEventListener('pointerdown', this.onPointerDown);
     canvas.addEventListener('pointermove', this.onPointerMove);
     canvas.addEventListener('pointerup', this.onPointerUp);
@@ -136,6 +142,7 @@ export class Highway {
   stop() {
     cancelAnimationFrame(this.raf);
     window.removeEventListener('resize', this.onResize);
+    this.observer?.disconnect();
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.canvas.removeEventListener('pointermove', this.onPointerMove);
     this.canvas.removeEventListener('pointerup', this.onPointerUp);

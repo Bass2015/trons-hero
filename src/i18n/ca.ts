@@ -34,6 +34,8 @@ export const ca = {
   loopFrom: 'del compàs',
   loopTo: 'al',
   mixer: 'Mescla',
+  extras: 'Extres',
+  mixerHint: 'Arrossega amunt sobre els instruments per obrir la mescla',
   left: 'Esq',
   right: 'Dre',
   keysHint: 'Teclat: V i N',
